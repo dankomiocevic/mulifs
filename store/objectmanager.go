@@ -16,7 +16,6 @@
 
 // Package store is package for managing the database that stores
 // the information about the songs, artists and albums.
-
 package store
 
 import (
