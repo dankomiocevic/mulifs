@@ -205,7 +205,7 @@ Installation (if you are not familiar with Go)
 
 1. Follow this link to install Go and set up your environment:
    
-  (https://golang.org/doc/install)[https://golang.org/doc/install]
+  [https://golang.org/doc/install](https://golang.org/doc/install)
   (don't forget to set up your GOPATH)
 
 2. Download, compile and install MuLi by running the following command:
