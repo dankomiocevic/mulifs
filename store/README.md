@@ -147,7 +147,7 @@ The following snippet lists the Albums for an Artist:
     // inside the previous one.
     b := root.Bucket([]byte("Some_Artist"))
     if b == nil {
-      return errors.New("Artist not found)
+      return errors.New("Artist not found.")
     }
     
     // Create a cursor to Iterate the values.
