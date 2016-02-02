@@ -187,7 +187,7 @@ The following snippet shows how to read the information for an Album:
     }
     
     // Now get the description JSON
-    albumJson := b.Get([]byte(".description"))
+    albumJson := c.Get([]byte(".description"))
     if albumJson == nil {
       return errors.New("Description not found.")
     }
@@ -209,3 +209,42 @@ For example:
   "AlbumPath":"OtherAlbum"
 }
 ```
+
+
+Reading the Songs in an Album
+-----------------------------
+
+This code iterates through all the songs in an album:
+```Go
+  err := db.View(func(tx *bolt.Tx) error {
+    // First, get the root Bucket (Artists)
+    root := tx.Bucket([]byte("Artists"))
+    // Now get the specific Artist Bucket
+    // inside the previous one.
+    b := root.Bucket([]byte("Some_Artist"))
+    if b == nil {
+      return errors.New("Artist not found.")
+    }
+    
+    // Then, get the specific Album Bucket
+    // inside the previous one.
+    c := root.Bucket([]byte("Other_Album"))
+    if c == nil {
+      return errors.New("Album not found.")
+    }
+    
+    // Create a cursor to Iterate the values.
+    d := c.Cursor()
+    for k, v := d.First(); k != nil; k, v = d.Next() {
+      // Skip the description and nil values
+      if v != nil && k != ".description" {
+        fmt.Printf("Song: %s\n", k)
+        fmt.Printf("Description: %s\n", v)
+      }
+    }
+    return nil
+  })
+```
+
+All the Song values contain a JSON object with information about the Song,
+Real Name and File Name.
