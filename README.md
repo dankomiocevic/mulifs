@@ -175,6 +175,15 @@ Every special character will be removed, also the dots and the spaces
 are replaced with underscores.
 
 
+Information Storage
+-------------------
+
+All the information about the Music Library that MuLi uses and gathers is
+stored in a [Bolt](https://github.com/boltdb/bolt) database (or Object store
+if you prefer).
+More information about it [here](https://github.com/dankomiocevic/mulifs/tree/master/store)
+
+
 Requirements
 ------------
 
@@ -245,6 +254,6 @@ License
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
-(http://www.apache.org/licenses/LICENSE-2.0)[http://www.apache.org/licenses/LICENSE-2.0]
+[http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
