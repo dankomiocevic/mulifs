@@ -25,7 +25,7 @@ Artists (Bucket)
 │    ├── .description (Key/Value)
 │    │
 │    ├── Some_Album (Bucket)
-│          ├── .description (Key/Value)
+│    │     ├── .description (Key/Value)
 │    │     └── Some_song (Key/Value)
 │    │ 
 │    └── Other_Album (Bucket)
@@ -118,3 +118,94 @@ The following snippet shows how to read the information for an Artist:
   })
 ```
 
+The Artist information is a JSON containing the Real Artist Name (the one with the special characters),
+the Directory Artist Name (the modified one that is compatible with most filesystems) and an array with
+all the Albums this Artist has.
+
+For example:
+```json
+{
+  "ArtistName":"Some Artist",
+  "ArtistPath":"Some_Artist",
+  "ArtistAlbums":
+    [
+      "Some_Album", 
+      "Other_Album"
+    ]
+}
+```
+
+Reading the Albums
+------------------
+
+The following snippet lists the Albums for an Artist:
+```Go
+  err := db.View(func(tx *bolt.Tx) error {
+    // First, get the root Bucket (Artists)
+    root := tx.Bucket([]byte("Artists"))
+    // Now get the specific Artist Bucket
+    // inside the previous one.
+    b := root.Bucket([]byte("Some_Artist"))
+    if b == nil {
+      return errors.New("Artist not found)
+    }
+    
+    // Create a cursor to Iterate the values.
+    c := b.Cursor()
+    for k, v := c.First(); k != nil; k, v = c.Next() {
+      // When the value is nil, it is a Bucket.
+      if v == nil {
+        fmt.Printf("Album: %s\n", k)
+      }
+    }
+    return nil
+  })
+```
+
+
+Reading an Album description
+----------------------------
+
+The following snippet shows how to read the information for an Album:
+
+```Go
+  err = db.View(func(tx *bolt.Tx) error {
+    // First, get the root bucket (Artists)
+    root := tx.Bucket([]byte("Artists"))
+    // Now get the specific Artist Bucket
+    // inside the previous one.
+    b := root.Bucket([]byte("Some_Artist"))
+    if b == nil {
+      return errors.New("Artist not found.")
+    }
+    
+    // Then, get the specific Album Bucket
+    // inside the previous one.
+    c := root.Bucket([]byte("Other_Album"))
+    if c == nil {
+      return errors.New("Album not found.")
+    }
+    
+    // Now get the description JSON
+    albumJson := b.Get([]byte(".description"))
+    if albumJson == nil {
+      return errors.New("Description not found.")
+    }
+    
+    // Of course, the JSON will need some processing
+    // to get the values, here we just print it.
+    fmt.Printf("Description: %s\n", albumJson)
+    return nil
+  })
+```
+
+The Album information is a JSON containing the Real Album Name (the one with the special characters) and
+the Directory Album Name (the modified one that is compatible with most filesystems).
+
+For example:
+```json
+{
+  "AlbumName":"Other Album",
+  "AlbumPath":"OtherAlbum"
+}
+```
