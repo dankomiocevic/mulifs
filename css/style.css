@@ -1,0 +1,85 @@
+html, body { }
+body { color: #555; margin: 0; padding: 0; width: 100%; font-family: 'Open Sans',sans-serif; position: relative; font-weight: 300; overflow-x: hidden; overflow-y: auto; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track-piece { background-color: #fff }
+::-webkit-scrollbar-thumb:vertical { height: 5px; background-color: #ccc; }
+* { -moz-transition: background-color 0.05s ease-in-out; -ms-transition: background-color 0.05s ease-in-out; -o-transition: background-color 0.05s ease-in-out; -webkit-transition: background-color 0.05s ease-in-out; transition: background-color 0.05s ease-in-out; }
+a { color: inherit }
+a:hover, a:visited { color: inherit }
+a, a:hover, a:visited { text-decoration: none; cursor: pointer; }
+.red { color: #fc3d39 }
+.darkred { color: #e33437 }
+.green { color: #53d769 }
+.darkgreen { color: #46c263 }
+.blue { color: #5ba4fc }
+.darkblue { color: #5897ee }
+.cyan { color: #39f7fc }
+.darkcyan { color: #02b3d5 }
+.purple { color: #6c36f6 }
+.yellow { color: #fdd13b }
+.darkyellow { color: #feae00 }
+.pink { color: #d753c0 }
+.darkpink { color: #c246a4 }
+.white { color: #ffffff }
+a.white:hover, a.white:visited { color: #eee }
+.textXL { font-size: 32px; font-weight: 100; line-height: 1em; margin: 0.6em 0; }
+.textXXL { font-size: 41px; font-weight: 100; }
+body { background-color: #02b3d5 }
+#header { width: 100%; padding: 0; height: 500px; text-align: center; max-width: 100%; display: block; background: url(../images/headerBG.png) no-repeat center; }
+#header #hamburger { color: #fff; position: fixed; top: 30px; left: 27px; padding: 10px; background-color: #0298b5; z-index: 10; cursor: pointer; padding: 10px 10px 5px; }
+#header #headerContent { position: absolute; top: 0; left: 50%; margin: 0 0 0 -140px; z-index: 8; width: 280px; }
+#header .links { float: right; margin: 37px auto 30px; list-style: none; padding: 5px 10px; background-color: #0298b5; display: inline-block; }
+#header .links li { display: inline-block; text-shadow: 1px 0px 1px rgba(0,0,0,.1); }
+#header .brand { margin: 30px auto 10px; width: 280px; display: block; }
+.section { width: 100%; background-color: #fff; padding: 0; margin: 0; float: left; }
+.content { max-width: 100%; margin: 20px auto 50px; box-sizing: border-box; padding: 0 30px; }
+.content .menu { display: none }
+.menu { display: inline-block; padding-top: 0px; padding-bottom: 0px; }
+.menu li { list-style: none }
+.menu li a { color: #999; font-weight: 400; }
+.menu li a:hover { color: #222 }
+.menu li.selected a { color: #000 }
+.menu li a { display: block; padding: 5px 0; }
+#menuFixed { position: fixed; top: 0; left: 0;z-index: 30; background-color: #fff; height: 100%; padding: 0 20px 0 0;}
+#menuFixed .menu { width: auto }
+#menuFixed .menu ul { padding: 20px; margin: 0; }
+#menuFixed .menu ul li { }
+#menuFixed .menu ul li a { white-space: nowrap }
+#blackBG { width: 100%; height: 100%; position: fixed; top: 0; left: 0;z-index: 29; background-color: rgba(0,0,0,0.4);}
+.content article { padding-bottom: 20px }
+.section#footer { background-color: #f9f9f9; padding: 0px 0 0; margin: 0; float: left; color: #333; border-top: 1px solid #eee; border-bottom: 4px solid #02b3d5; text-align: center; }
+.section#footer .content { margin: 0 auto 0 }
+#container { margin: 0 auto 0 }
+
+/* Github CSS */
+.pl-pds, .pl-s, .pl-s .pl-pse .pl-s1, .pl-sr, .pl-sr .pl-cce, .pl-sr .pl-sra, .pl-sr .pl-sre { color: #183691 }
+.markdown-body h1 { padding-top: 94px; font-size: 2em; line-height: 1.225; margin-top: 25px; display: block; }
+.markdown-body h2 { padding-top: 94px; padding-bottom: 0.3em; font-size: 1.75em; line-height: 1.225; border-bottom: 1px solid #eee; margin-top: 25px; display: block; }
+.markdown-body .highlight pre, .markdown-body pre { padding: 16px; overflow: auto; font-size: 85%; line-height: 1.45; background-color: #f7f7f7; border-radius: 3px; }
+/* */
+.main-header-btn { transition: all 0.4s; color: inherit; padding: 9px 20px 10px; vertical-align: top; cursor: pointer; border: 1px solid #fff; border-radius: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; -webkit-animation: fadein 2s; -ms-animation: fadein 2s; animation: fadein 2s; text-shadow: none; color: #333; background-color: #fff; font-size: 22px; display: inline-block; }
+.main-header-btn:hover { box-shadow: 0 0 50px rgba(255,255,255,0.3) }
+@media screen and (min-width:24em) { 
+    #header .links { margin: 37px auto 0; float: none; }
+}
+@media screen and (min-width: 48em) { 
+    .content { max-width: 960px; margin: 0px auto 50px; }
+    #header #hamburger { display: none }
+    #menuFixed { display: none }
+    #blackBG { display: none }
+    .content .menu { display: inline-block; float: left; width: 25%; padding-top: 25px; padding-bottom: 25px; }
+    .content article { display: inline-block; width: 75%; float: left; }
+    .markdown-body h1 { padding-top: 20px }
+    .markdown-body h2 { padding-top: 20px }
+}
+@media screen and (min-width: 64em) { 
+    
+}
+/* Before and after plugin */
+.balinks { display: none }
+#beforeafter { position: absolute; z-index: 2; top: 0; left: 50%; margin: 0 0 0 -512px; display: none; }
+@media screen and (min-width: 64em) { 
+    #beforeafter { display: block }
+    #header { background: none }
+}
+ 

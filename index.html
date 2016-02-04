@@ -1,8 +1,358 @@
-<html>
+<!DOCTYPE HTML PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en" ng-app="myApp">
 <head>
-<title>Demo Site</title>
+<title>MuLi FS - Pasteurized Music Library File System</title>
+<!-- 
+                  __              
+ /'\_/`\         /\ \       __    
+/\      \  __  __\ \ \     /\_\   
+\ \ \__\ \/\ \/\ \\ \ \  __\/\ \  
+ \ \ \_/\ \ \ \_\ \\ \ \L\ \\ \ \ 
+  \ \_\\ \_\ \____/ \ \____/ \ \_\
+   \/_/ \/_/\/___/   \/___/   \/_/
+                                  
+-->
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="stylesheet" type="text/css" href="css/normalize.css">
+<link rel="stylesheet" type="text/css" href="css/fonts/material-icons.css">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,300" rel="stylesheet" type="text/css">
+<link rel="stylesheet" type="text/css" href="css/style.css" media="screen">
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+<script type="text/javascript" src="js/jquery.beforeafter-1.4.js"></script>
+<script src="js/angular.min.js"></script>
+<script src="js/panel.js"></script>
+<script src="js/my_controller.js"></script>
+<script type="text/javascript">
+$(function(){
+	$('#container').beforeAfter({
+	animateIntro : true,
+        introDelay : 1500,
+        introDuration : 1000,
+        showFullLinks : false
+	});
+});
+</script>
+<link rel="shortcut icon" href="images/favicon.png">
 </head>
-<body>
-Demo site for Gonza!
+<body ng-controller="myCtrl" ng-init="view = hash">
+<div id="header">
+    <div id="hamburger" ng-init="lateralMenu = false" ng-click="lateralMenu = !lateralMenu">
+        <i class="material-icons hamburger">&#xE5D2;</i>
+    </div>
+	<div id="headerContent">
+		<ul class="links white">
+			<li><a class="white" href="https://github.com/dankomiocevic/mulifs">GitHub</a></li>
+			<li>|</li>
+			<li><a class="white" href="#doc">Doc</a></li>
+			<li>|</li>
+			<li><a class="white" href="https://github.com/dankomiocevic/mulifs/archive/master.zip">Download</a></li>
+		</ul>
+		<img class="brand" src="images/brand.png">
+		<!--<p class="textXL white">Pasteurized Music Library File System</p>-->
+		<p><a href="https://github.com/dankomiocevic/mulifs" class="main-header-btn">Try it now</a></p>
+	</div>
+	<div id="beforeafter">
+		<div id="container">
+		 <div><img alt="before" src="images/headerBG1.png" width="1024" height="500" /></div>
+		 <div><img alt="after" src="images/headerBG2.png" width="1024" height="500" /></div>
+		</div>
+	</div>
+</div>
+<div class="section" id="doc">
+<div class="content">
+    <div class="menu">
+        <ul>
+            <li ng-class="{selected: view == 'mulifs--music-library-filesystem'}"><a href="#mulifs--music-library-filesystem" ng-click="view = 'mulifs--music-library-filesystem'">MuLiFS</a></li>
+            <li ng-class="{selected: view == 'quick-start'}"><a href="#quick-start" ng-click="view = 'quick-start'">Quick Start</a></li>
+            <li ng-class="{selected: view == 'project-status'}"><a href="#project-status" ng-click="view = 'project-status'">Project status</a></li>
+            <li ng-class="{selected: view == 'how-it-works'}"><a href="#how-it-works" ng-click="view = 'how-it-works'">How it works</a></li>
+            <li ng-class="{selected: view == 'description-files'}"><a href="#description-files" ng-click="view = 'description-files'">Description files</a></li>
+            <li ng-class="{selected: view == 'requirements'}"><a href="#requirements" ng-click="view = 'requirements'">Requirements</a></li>
+            <li ng-class="{selected: view == 'dependencies'}"><a href="#dependencies" ng-click="view = 'dependencies'">Dependencies</a></li>
+            <li ng-class="{selected: view == 'installation-if-you-are-not-familiar-with-go'}"><a href="#installation-if-you-are-not-familiar-with-go" ng-click="view = 'installation-if-you-are-not-familiar-with-go'">Installation</a></li>
+            <li ng-class="{selected: view == 'running-muli'}"><a href="#running-muli" ng-click="view = 'running-muli'">Running MuLi</a></li>
+            <li ng-class="{selected: view == 'license'}"><a href="#license" ng-click="view = 'license'">License</a></li>
+        </ul>
+    </div>
+<article class="markdown-body entry-content" itemprop="mainContentOfPage">
+<div ng-show="view == 'mulifs--music-library-filesystem'">
+<h1 id="mulifs--music-library-filesystem">
+	<a id="user-content-mulifs--music-library-filesystem" class="anchor" href="#mulifs--music-library-filesystem" aria-hidden="true">MuLiFS : Music Library Filesystem</a>
+</h1>
+
+<p>MuLi (pronounced Moo-Lee) is a filesystem written in Go to mount music
+libraries and organize the music based on the music file tags.</p>
+
+<p>It scans a Directory tree and reads all the Tags in the music files and
+generates a Directory structure organizing the songs by Artist and
+Album.</p>
+</div>
+<div ng-show="view == 'quick-start'">
+<h2 id="quick-start"><a id="user-content-quick-start" class="anchor" href="#quick-start" aria-hidden="true">Quick Start</a></h2>
+
+<p>For the anxious that don't like to read, here is the command to make 
+this work:</p>
+
+<pre><code>mulifs MUSIC_SOURCE MOUNTPOINT 
+</code></pre>
+
+<p>Where the MUSIC_SOURCE is the path where the music is stored and
+MOUNTPOINT is the path where MuLi sould be mounted.</p>
+</div>
+<div ng-show="view == 'project-status'">
+<h2 id="project-status"><a id="user-content-project-status" class="anchor" href="#project-status" aria-hidden="true">Project status</a></h2>
+
+<p>This project is currently under development and it is not ready to use yet.
+The basic functionality is ready but some work needs to be done, including:</p>
+
+<ul>
+<li>Finish the playlists management.</li>
+<li>Finish the drop Directory.</li>
+<li>Add testing code.</li>
+<li>Test and test!</li>
+</ul>
+</div>
+<div ng-show="view == 'how-it-works'">
+<h2 id="how-it-works"><a id="user-content-how-it-works" class="anchor" href="#how-it-works" aria-hidden="true">How it works</a></h2>
+
+<p>Organizing a Music library is always a tedious task and there is always
+lots of different information that does not match.</p>
+
+<p>MuLi reads a Directory tree (Directories and Subdirectories of a specific
+path) and scans for all the music files (it actually supports only MP3).
+Every time it finds a music file it reads the ID Tags that specify the 
+Artist, Album and Song name.
+If any of these parameters are missing it completes the information with
+default values (unknown Artist or Album and tries to read the song name 
+from the path) and updates the Tags for future scans.
+It stores all the gathered information into a BoltDB that is an object 
+store that is fast, simple and completely written in Go, that makes 
+MuLi portable!</p>
+
+<p>Once the Directory is completely scanned and all the information is
+in the Database, MuLi creates a directory structure as following:</p>
+
+<pre><code>mounted_path
+│
+├── Some_Artist
+│    │
+│    ├── Some_Album
+│    │     └── Some_song.mp3
+│    │ 
+│    └── Other_Album
+│          ├── More_songs.mp3
+│          ├── ...
+│          └── Other_song.mp3
+│
+├── Other_Artist
+│    │
+│    └── Some_Album
+│          ├── Great_Song.mp3
+│          ├── ...
+│          └── AwesomeSong.mp3
+│
+├── drop
+│ 
+└── playlists
+     │
+     └── Music_I_Like
+           ├── Other_Artist
+           │     └── Some_Album
+           │           ├── Great_Song.mp3
+           │           └── AwesomeSong.mp3
+           ├── ...
+           └── Some_Artist
+                 └── Some_Album
+                       ├── Great_Song.mp3
+                       └── AwesomeSong.mp3
+
+</code></pre>
+
+<p>Lets take a look at this Directory structure! </p>
+
+<p>The first thing to notice is that in the root directory of the mounted 
+path (the path where the filesystem is mounted), there are folders 
+with the Artists names, one folder per Artist.</p>
+
+<p>When MuLi scans the music files to get the Tags information it changes
+the names to make them compatible with every operative system and filesystem.
+It removes the special characters and replaces the spaces with underscores,
+but only in the Directory and Files names. It does not modify the 
+real names stored in the music files!</p>
+
+<p>Inside every Artist song there are Directories that match every Album
+in the Music Library, as it happens in the Artists Directory names, the 
+names in the Albums are also modified.</p>
+
+<p>Finally, inside every Album are the Songs! The songs can be read, moved,
+modified and deleted without any problem. But be careful! When the Song
+is deleted, it is deleted from the origin path too!!</p>
+
+<p>When a Song is moved from one path to another inside the MuLi filesystem,
+the Tags inside the Song file are also updated. This makes the Music 
+Library consistent and keeps every Song updated!
+If you create or copy a new Song file inside any folder, the Tags inside the
+file will be modified accordingly.</p>
+
+<p>Directoriee and Songs can be created and moved and it modifies the Tags
+on the Songs and creates or modifies Artists and Albums.
+Again, be careful! If you delete a Directory it will be PERMANENT for the
+Songs inside it!</p>
+
+<p>There are two special directories in the filesystem:</p>
+
+<ol>
+<li><p>drop: Every file that is stored here will be scanned and moved to the 
+correct location depending on the Tags it contains. If you have a new file
+that you want to add to the Music Library and you don't want to create
+the parent Directories, just drop it here!</p></li>
+<li><p>playlists: This Directory manages the playlists, for every playlist
+in the Source Directory, all the files inside it are analyzed and 
+the same Directory structure will be created. Then a playlist will
+contain Artists and Albums folders for every Song inside it. The format
+used in playlists is M3U.</p></li>
+</ol>
+</div>
+<div ng-show="view == 'description-files'">
+<h2 id="description-files"><a id="user-content-description-files" class="anchor" href="#description-files" aria-hidden="true">Description files</a></h2>
+
+<p>As MuLi modifies the names for the Tags to be compatible with different
+filesystems, it also generates a special file inside every Directory
+called .description.</p>
+
+<p>The description files are the only files allowed to start with a dot in
+the MuLi filesystem, it contains a JSON with the information of the
+containing Album or Artist.</p>
+
+<p>For example, in the previous file structure, the Some_Artist directory
+would contain a Description file as this one:</p>
+
+<div class="highlight highlight-source-json"><pre>{
+  <span class="pl-s"><span class="pl-pds">"</span>ArtistName<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>Some Artist<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>ArtistPath<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>Some_Artist<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>ArtistAlbums<span class="pl-pds">"</span></span>:
+    [
+      <span class="pl-s"><span class="pl-pds">"</span>Some_Album<span class="pl-pds">"</span></span>, 
+      <span class="pl-s"><span class="pl-pds">"</span>Other_Album<span class="pl-pds">"</span></span>
+    ]
+}</pre></div>
+
+<p>Here all the information for the Artist can be processed and read.
+On the other hand, for the Album Directories the example would be
+like this one in the Other_Album folder:</p>
+
+<div class="highlight highlight-source-json"><pre>{
+  <span class="pl-s"><span class="pl-pds">"</span>AlbumName<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>Other Album<span class="pl-pds">"</span></span>,
+  <span class="pl-s"><span class="pl-pds">"</span>AlbumPath<span class="pl-pds">"</span></span>:<span class="pl-s"><span class="pl-pds">"</span>OtherAlbum<span class="pl-pds">"</span></span>
+}</pre></div>
+
+<p>Every special character will be removed, also the dots and the spaces
+are replaced with underscores.</p>
+</div>
+<div ng-show="view == 'requirements'">
+<h2 id="requirements"><a id="user-content-requirements" class="anchor" href="#requirements" aria-hidden="true">Requirements</a></h2>
+
+<ul>
+<li>A computer running a flavour of *nix</li>
+</ul>
+</div>
+<div ng-show="view == 'dependencies'">
+<h2 id="dependencies"><a id="user-content-dependencies" class="anchor" href="#dependencies" aria-hidden="true">Dependencies</a></h2>
+
+<ul>
+<li><a href="https://github.com/bazil/fuse">github.com/bazil/fuse</a></li>
+<li><a href="https://github.com/boltdb/bolt">github.com/boltdb/bolt</a></li>
+<li><a href="https://github.com/golang/glog">github.com/golang/glog</a></li>
+</ul>
+
+<p>MuLi is based on the awesome <a href="https://github.com/bazil">Bazil's</a> 
+implementation of <a href="https://github.com/bazil/fuse">FUSE</a> purely in Go.
+It uses FUSE to generate the filesystem in userspace.</p>
+
+<p>It also uses the great and simple <a href="https://github.com/boltdb/bolt">BoltDB</a>
+to store all the information of Songs, Artists and Albums.</p>
+
+<p>To manage the logs it uses the Glog library for Go.</p>
+
+<p>If you don't know these projects take a look at them!</p>
+</div>
+<div ng-show="view == 'installation-if-you-are-not-familiar-with-go'">
+<h2 id="installation-if-you-are-not-familiar-with-go"><a id="user-content-installation-if-you-are-not-familiar-with-go" class="anchor" href="#installation-if-you-are-not-familiar-with-go" aria-hidden="true">Installation (if you are not familiar with Go)</a></h2>
+
+<ol>
+<li><p>Follow this link to install Go and set up your environment:</p>
+
+<p><a href="https://golang.org/doc/install">https://golang.org/doc/install</a>
+(don't forget to set up your GOPATH)</p></li>
+<li><p>Download, compile and install MuLi by running the following command:</p></li>
+</ol>
+
+<pre><code>go get github.com/dankomiocevic/mulifs
+</code></pre>
+</div>
+<div ng-show="view == 'running-muli'">
+<h2 id="running-muli"><a id="user-content-running-muli" class="anchor" href="#running-muli" aria-hidden="true">Running MuLi</a></h2>
+
+<p>To start the Music Library Filesystem run:</p>
+
+<pre><code>mulifs [global_options] MUSIC_SOURCE MOUNTPOINT 
+</code></pre>
+
+<h3><a id="user-content-params" class="anchor" href="#params" aria-hidden="true"></a>Params</h3>
+
+<ul>
+<li>MUSIC_SOURCE: The path of the folder containing the music files.</li>
+<li>MOUNTPOINT: The path where MuLi should be mounted.</li>
+</ul>
+
+<h3><a id="user-content-global-options" class="anchor" href="#global-options" aria-hidden="true"></a>Global Options</h3>
+
+<ul>
+<li>alsologtostderr: log to standard error as well as files</li>
+<li>db_path string: Database path. (default "muli.db")</li>
+<li>log_backtrace_at value: when logging hits line file:N, emit a stack trace (default :0)</li>
+<li>log_dir string: If non-empty, write log files in this directory</li>
+<li>logtostderr: log to standard error instead of files</li>
+<li>stderrthreshold value: logs at or above this threshold go to stderr</li>
+<li>v value: log level for V logs</li>
+<li>vmodule value: comma-separated list of pattern=N settings for file-filtered logging</li>
+</ul>
+</div>
+<div ng-show="view == 'license'">
+<h2 id="license"><a id="user-content-license" class="anchor" href="#license" aria-hidden="true">License</a></h2>
+
+<p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at</p>
+
+<p>(<a href="http://www.apache.org/licenses/LICENSE-2.0)%5Bhttp://www.apache.org/licenses/LICENSE-2.0%5D">http://www.apache.org/licenses/LICENSE-2.0)[http://www.apache.org/licenses/LICENSE-2.0]</a></p>
+
+<p>Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.</p>
+</div>
+</article>
+</div>
+</div>
+<div class="section" id="footer">
+    <div class="content">
+    	<p>Qiave 2016</p>
+    </div>
+</div>
+<div id="menuFixed" ng-show="lateralMenu">
+    <div class="menu" ng-click="lateralMenu = false" >
+        <ul>
+            <li ng-class="{selected: view == 'mulifs--music-library-filesystem'}"><a href="#mulifs--music-library-filesystem" ng-click="view = 'mulifs--music-library-filesystem'">MuLiFS</a></li>
+            <li ng-class="{selected: view == 'quick-start'}"><a href="#quick-start" ng-click="view = 'quick-start'">Quick Start</a></li>
+            <li ng-class="{selected: view == 'project-status'}"><a href="#project-status" ng-click="view = 'project-status'">Project status</a></li>
+            <li ng-class="{selected: view == 'how-it-works'}"><a href="#how-it-works" ng-click="view = 'how-it-works'">How it works</a></li>
+            <li ng-class="{selected: view == 'description-files'}"><a href="#description-files" ng-click="view = 'description-files'">Description files</a></li>
+            <li ng-class="{selected: view == 'requirements'}"><a href="#requirements" ng-click="view = 'requirements'">Requirements</a></li>
+            <li ng-class="{selected: view == 'dependencies'}"><a href="#dependencies" ng-click="view = 'dependencies'">Dependencies</a></li>
+            <li ng-class="{selected: view == 'installation-if-you-are-not-familiar-with-go'}"><a href="#installation-if-you-are-not-familiar-with-go" ng-click="view = 'installation-if-you-are-not-familiar-with-go'">Installation</a></li>
+            <li ng-class="{selected: view == 'running-muli'}"><a href="#running-muli" ng-click="view = 'running-muli'">Running MuLi</a></li>
+            <li ng-class="{selected: view == 'license'}"><a href="#license" ng-click="view = 'license'">License</a></li>
+        </ul>
+    </div>
+</div>
+<div ng-click="lateralMenu = false" ng-show="lateralMenu" id="blackBG"></div>
 </body>
 </html>
