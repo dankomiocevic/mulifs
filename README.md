@@ -1,6 +1,8 @@
 MuLiFS : Music Library Filesystem
 =================================
 
+[![GoDoc](https://godoc.org/github.com/dankomiocevic/mulifs?status.svg)](https://godoc.org/github.com/dankomiocevic/mulifs)
+
 MuLi (pronounced Moo-Lee) is a filesystem written in Go to mount music
 libraries and organize the music based on the music file tags.
 
