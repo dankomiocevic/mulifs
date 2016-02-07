@@ -173,6 +173,17 @@ var _ = fs.NodeCreater(&Dir{})
 
 func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.CreateResponse) (fs.Node, fs.Handle, error) {
 	glog.Infof("Entered Create Dir\n")
+
+	if req.Flags.IsReadOnly() {
+		glog.Info("Create: File requested is read only.\n")
+	}
+	if req.Flags.IsReadWrite() {
+		glog.Info("Create: File requested is read write.\n")
+	}
+	if req.Flags.IsWriteOnly() {
+		glog.Info("Create: File requested is write only.\n")
+	}
+
 	if len(d.artist) < 1 || len(d.album) < 1 {
 		return nil, nil, fuse.EPERM
 	}
@@ -190,7 +201,12 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 		return nil, nil, fuse.EPERM
 	}
 
-	path := d.mPoint + "/" + d.artist + "/" + d.album + "/"
+	rootPoint := d.mPoint
+	if rootPoint[len(rootPoint)-1] != '/' {
+		rootPoint = rootPoint + "/"
+	}
+
+	path := rootPoint + d.artist + "/" + d.album + "/"
 	name, err := store.CreateSong(d.artist, d.album, nameRaw, path)
 	if err != nil {
 		return nil, nil, fuse.EPERM
@@ -216,6 +232,9 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 		mPoint: d.mPoint,
 	}
 
+	if fi != nil {
+		glog.Infof("Returning file handle for: %s.\n", fi.Name())
+	}
 	return f, &FileHandle{r: fi, f: f}, nil
 }
 
