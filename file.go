@@ -78,8 +78,19 @@ var _ = fs.NodeOpener(&File{})
 
 func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenResponse) (fs.Handle, error) {
 	glog.Infof("Entered Open with file name: %s.\n", f.name)
+
 	if f.name == ".description" {
 		return &FileHandle{r: nil, f: f}, nil
+	}
+
+	if req.Flags.IsReadOnly() {
+		glog.Info("Open: File requested is read only.\n")
+	}
+	if req.Flags.IsReadWrite() {
+		glog.Info("Open: File requested is read write.\n")
+	}
+	if req.Flags.IsWriteOnly() {
+		glog.Info("Open: File requested is write only.\n")
 	}
 
 	songPath, err := store.GetFilePath(f.artist, f.album, f.name)
@@ -91,7 +102,6 @@ func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenR
 	if err != nil {
 		return nil, err
 	}
-	resp.Flags |= fuse.OpenNonSeekable
 	return &FileHandle{r: r, f: nil}, nil
 }
 
@@ -105,22 +115,26 @@ var _ fs.Handle = (*FileHandle)(nil)
 var _ fs.HandleReleaser = (*FileHandle)(nil)
 
 func (fh *FileHandle) Release(ctx context.Context, req *fuse.ReleaseRequest) error {
-	glog.Infof("Entered Release: Artist: %s, Album: %s, Song: %s\n", fh.f.artist, fh.f.album, fh.f.name)
 	if fh.r == nil {
+		glog.Infof("Entered Release: .description file\n")
 		if fh.f.name == ".description" {
 			return nil
 		}
 	}
 
-	if req.Flags.IsReadOnly() {
-		// we don't need to track read-only handles
+	if fh.r == nil {
+		glog.Info("Release: There is no file handler.\n")
 		return nil
 	}
+	glog.Infof("Releasing the file: %s\n", fh.r.Name())
+
 	// This is not an music file or this is a strange situation.
-	if len(fh.f.artist) < 1 || len(fh.f.album) < 1 {
+	if fh.f == nil || len(fh.f.artist) < 1 || len(fh.f.album) < 1 {
+		glog.Info("Entered Release: Artist or Album not set.\n")
 		return fh.r.Close()
 	}
 
+	glog.Infof("Entered Release: Artist: %s, Album: %s, Song: %s\n", fh.f.artist, fh.f.album, fh.f.name)
 	ret_val := fh.r.Close()
 	extension := filepath.Ext(fh.f.name)
 	songPath, err := store.GetFilePath(fh.f.artist, fh.f.album, fh.f.name)
@@ -149,6 +163,7 @@ func (fh *FileHandle) Read(ctx context.Context, req *fuse.ReadRequest, resp *fus
 	glog.Infof("Entered Read.\n")
 	if fh.r == nil {
 		if fh.f.name == ".description" {
+			glog.Info("Reading description file\n")
 			if len(fh.f.artist) < 1 {
 				return fuse.ENOENT
 			}
@@ -170,8 +185,11 @@ func (fh *FileHandle) Read(ctx context.Context, req *fuse.ReadRequest, resp *fus
 			resp.Data = []byte(descBytes)
 			return nil
 		}
-		return nil
+		glog.Info("There is no file handler.\n")
+		return fuse.EIO
 	}
+
+	glog.Infof("Reading file: %s.\n", fh.r.Name())
 	buf := make([]byte, req.Size)
 	n, err := fh.r.Read(buf)
 	resp.Data = buf[:n]
@@ -188,10 +206,10 @@ func (fh *FileHandle) Write(ctx context.Context, req *fuse.WriteRequest, resp *f
 			//TODO: Allow to write description
 			return fuse.EPERM
 		}
-		return nil
+		return fuse.EIO
 	}
 
-	glog.Infof("Writing data: %s\n", string(req.Data))
+	glog.Infof("Writing file: %s.\n", fh.r.Name())
 	n, err := fh.r.Write(req.Data)
 	resp.Size = n
 	return err
@@ -200,10 +218,17 @@ func (fh *FileHandle) Write(ctx context.Context, req *fuse.WriteRequest, resp *f
 var _ = fs.HandleFlusher(&FileHandle{})
 
 func (fh *FileHandle) Flush(ctx context.Context, req *fuse.FlushRequest) error {
-	glog.Infof("Entered Flush\n")
+	if fh.f != nil {
+		glog.Infof("Entered Flush with Song: %s, Artist: %s and Album: %s\n", fh.f.name, fh.f.artist, fh.f.album)
+	}
+
 	if fh.r == nil {
 		glog.Infof("There is no file handler.\n")
+		return fuse.EIO
 	}
+
+	glog.Infof("Entered Flush with path: %s\n", fh.r.Name())
+
 	fh.r.Sync()
 	return nil
 }
@@ -211,7 +236,7 @@ func (fh *FileHandle) Flush(ctx context.Context, req *fuse.FlushRequest) error {
 var _ = fs.NodeSetattrer(&File{})
 
 func (f *File) Setattr(ctx context.Context, req *fuse.SetattrRequest, resp *fuse.SetattrResponse) error {
-	glog.Infof("Entered SetAttr\n")
+	glog.Infof("Entered SetAttr with Song: %s, Artist: %s and Album: %s\n", f.name, f.artist, f.album)
 
 	if req.Valid.Size() {
 		glog.Infof("New size: %d\n", int(req.Size))
