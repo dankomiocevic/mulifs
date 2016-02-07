@@ -419,7 +419,7 @@ func GetAlbumPath(artist string, album string) (string, error) {
 // If there is an error obtaining the Song
 // an error will be returned.
 func GetFilePath(artist string, album string, song string) (string, error) {
-	glog.Infof("Reading song: %s\n", song)
+	glog.Infof("Getting file path for song: %s Artist: %s Album: %s\n", song, artist, album)
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return "", err
