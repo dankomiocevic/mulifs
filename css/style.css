@@ -4,6 +4,7 @@ body { color: #555; margin: 0; padding: 0; width: 100%; font-family: 'Open Sans'
 ::-webkit-scrollbar-track-piece { background-color: #fff }
 ::-webkit-scrollbar-thumb:vertical { height: 5px; background-color: #ccc; }
 * { -moz-transition: background-color 0.05s ease-in-out; -ms-transition: background-color 0.05s ease-in-out; -o-transition: background-color 0.05s ease-in-out; -webkit-transition: background-color 0.05s ease-in-out; transition: background-color 0.05s ease-in-out; }
+[ng\:cloak], [ng-cloak], .ng-cloak { display: none; }
 a { color: inherit }
 a:hover, a:visited { /* color: inherit */ }
 a, a:hover, a:visited { text-decoration: none; cursor: pointer; }
@@ -59,6 +60,10 @@ body { background-color: #02b3d5 }
 /* */
 .main-header-btn { transition: all 0.4s; padding: 9px 20px 10px; vertical-align: top; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); border-radius: 3px; text-decoration: none; -webkit-tap-highlight-color: transparent; -webkit-animation: fadein 2s; -ms-animation: fadein 2s; animation: fadein 2s; text-shadow: none; color: #fff; background-color: rgba(0,0,0,0.2); font-size: 18px; display: inline-block; text-shadow: 0px 1px 1px rgba(0,0,0,0.4); }
 .main-header-btn:hover { box-shadow: 0 0 50px rgba(255,255,255,0.1); background-color: rgba(0,0,0,0.5); }
+
+.btn{border:1px solid #ddd;padding: 9px 18px;border-radius: 5px;font-weight: 400;display: inline-block;}
+.btn:hover{background-color:#eee}
+.floatRight{float: right;}
 @media screen and (min-width:24em) { 
     #header { height: 328px }
     #header .brand { max-width: 340px }

@@ -88,6 +88,8 @@ libraries and organize the music based on the music file tags.</p>
 <p>It scans a Directory tree and reads all the Tags in the music files and
 generates a Directory structure organizing the songs by Artist and
 Album.</p>
+<br>
+<a href="#quick-start" ng-click="view = 'quick-start'" class="btn floatRight">next</a>
 </div>
 <div ng-show="view == 'quick-start'">
 <h2 id="quick-start"><a id="user-content-quick-start" class="anchor" href="#quick-start" aria-hidden="true">Quick Start</a></h2>
@@ -100,6 +102,8 @@ this work:</p>
 
 <p>Where the MUSIC_SOURCE is the path where the music is stored and
 MOUNTPOINT is the path where MuLi sould be mounted.</p>
+<br>
+<a href="#project-status" ng-click="view = 'project-status'" class="btn floatRight">next</a>
 </div>
 <div ng-show="view == 'project-status'">
 <h2 id="project-status"><a id="user-content-project-status" class="anchor" href="#project-status" aria-hidden="true">Project status</a></h2>
@@ -113,6 +117,8 @@ The basic functionality is ready but some work needs to be done, including:</p>
 <li>Add testing code.</li>
 <li>Test and test!</li>
 </ul>
+<br>
+<a href="#how-it-works" ng-click="view = 'how-it-works'" class="btn floatRight">next</a>
 </div>
 <div ng-show="view == 'how-it-works'">
 <h2 id="how-it-works"><a id="user-content-how-it-works" class="anchor" href="#how-it-works" aria-hidden="true">How it works</a></h2>
@@ -214,6 +220,8 @@ the same Directory structure will be created. Then a playlist will
 contain Artists and Albums folders for every Song inside it. The format
 used in playlists is M3U.</p></li>
 </ol>
+<br>
+<a href="#description-files" ng-click="view = 'description-files'" class="btn floatRight">next</a>
 </div>
 <div ng-show="view == 'description-files'">
 <h2 id="description-files"><a id="user-content-description-files" class="anchor" href="#description-files" aria-hidden="true">Description files</a></h2>
@@ -250,13 +258,16 @@ like this one in the Other_Album folder:</p>
 
 <p>Every special character will be removed, also the dots and the spaces
 are replaced with underscores.</p>
+<br>
+<a href="#requirements" ng-click="view = 'requirements'" class="btn floatRight">next</a>
 </div>
 <div ng-show="view == 'requirements'">
 <h2 id="requirements"><a id="user-content-requirements" class="anchor" href="#requirements" aria-hidden="true">Requirements</a></h2>
-
 <ul>
 <li>A computer running a flavour of *nix</li>
 </ul>
+<br>
+<a href="#dependencies" ng-click="view = 'dependencies'" class="btn floatRight">next</a>
 </div>
 <div ng-show="view == 'dependencies'">
 <h2 id="dependencies"><a id="user-content-dependencies" class="anchor" href="#dependencies" aria-hidden="true">Dependencies</a></h2>
@@ -277,6 +288,8 @@ to store all the information of Songs, Artists and Albums.</p>
 <p>To manage the logs it uses the Glog library for Go.</p>
 
 <p>If you don't know these projects take a look at them!</p>
+<br>
+<a href="#installation-if-you-are-not-familiar-with-go" ng-click="view = 'installation-if-you-are-not-familiar-with-go'" class="btn floatRight">next</a>
 </div>
 <div ng-show="view == 'installation-if-you-are-not-familiar-with-go'">
 <h2 id="installation-if-you-are-not-familiar-with-go"><a id="user-content-installation-if-you-are-not-familiar-with-go" class="anchor" href="#installation-if-you-are-not-familiar-with-go" aria-hidden="true">Installation (if you are not familiar with Go)</a></h2>
@@ -291,6 +304,8 @@ to store all the information of Songs, Artists and Albums.</p>
 
 <pre><code>go get github.com/dankomiocevic/mulifs
 </code></pre>
+<br>
+<a href="#running-muli" ng-click="view = 'running-muli'" class="btn floatRight">next</a>
 </div>
 <div ng-show="view == 'running-muli'">
 <h2 id="running-muli"><a id="user-content-running-muli" class="anchor" href="#running-muli" aria-hidden="true">Running MuLi</a></h2>
@@ -319,6 +334,8 @@ to store all the information of Songs, Artists and Albums.</p>
 <li>v value: log level for V logs</li>
 <li>vmodule value: comma-separated list of pattern=N settings for file-filtered logging</li>
 </ul>
+<br>
+<a href="#license" ng-click="view = 'license'" class="btn floatRight">next</a>
 </div>
 <div ng-show="view == 'license'">
 <h2 id="license"><a id="user-content-license" class="anchor" href="#license" aria-hidden="true">License</a></h2>
@@ -338,7 +355,7 @@ to store all the information of Songs, Artists and Albums.</p>
     	<p>Qiave 2016</p>
     </div>
 </div>
-<div id="menuFixed" ng-show="lateralMenu">
+<div id="menuFixed" ng-show="lateralMenu" ng-cloak>
     <div class="menu" ng-click="lateralMenu = false" >
         <ul>
             <li ng-class="{selected: view == 'mulifs--music-library-filesystem'}"><a href="#mulifs--music-library-filesystem" ng-click="view = 'mulifs--music-library-filesystem'">MuLiFS</a></li>
@@ -354,7 +371,7 @@ to store all the information of Songs, Artists and Albums.</p>
         </ul>
     </div>
 </div>
-<div ng-click="lateralMenu = false" ng-show="lateralMenu" id="blackBG"></div>
+<div ng-click="lateralMenu = false" ng-show="lateralMenu" id="blackBG" ng-cloak></div>
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
