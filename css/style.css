@@ -26,7 +26,7 @@ a.white:hover{color:#fff}
 .textXL { font-size: 32px; font-weight: 100; line-height: 1em; margin: 0.6em 0; }
 .textXXL { font-size: 41px; font-weight: 100; }
 body { background-color: #02b3d5 }
-#header { width: 100%; padding: 0; height: 293px; text-align: center; max-width: 100%; display: block; background: url(../images/headerBG.png) no-repeat center; background-size: cover; }
+#header { width: 100%; padding: 0; height: 313px; text-align: center; max-width: 100%; display: block; background: url(../images/headerBG.png) no-repeat center; background-size: cover; }
 #header #hamburger { color: #fff; position: fixed; top: 15px; left: 0; padding: 10px; background-color: rgba(0,0,0,0.2); z-index: 10; cursor: pointer; padding: 10px 10px 5px; }
 #header #headerContent { position: static; margin: 0; width: 100%; padding: 0 10px; box-sizing: border-box; }
 #header .links { float: right; margin: 21px auto 44px; list-style: none; padding: 5px 10px; background-color: rgba(0,0,0,0.2); display: inline-block; }
@@ -65,17 +65,17 @@ body { background-color: #02b3d5 }
 .btn:hover{background-color:#eee}
 .floatRight{float: right;}
 @media screen and (min-width:24em) { 
-    #header { height: 328px }
+    #header { height: 348px }
     #header .brand { max-width: 340px }
     #header .links { margin: 21px auto 0; float: none; }
 }
 @media screen and (min-width:28em) { 
-    #header { height: 347px }
+    #header {height: 367px}
     #header .brand { max-width: 400px }
     .content article { font-size: 15px }
 }
 @media screen and (min-width: 48em) { 
-    #header { height: 366px }
+    #header {height: 386px;}
     #header .brand { max-width: 450px }
     #header #headerContent { position: absolute; top: 0; left: 50%; margin: 0 0 0 -300px; z-index: 8; width: 600px; }
     .content { max-width: 960px; margin: 0px auto 50px; }
@@ -100,3 +100,4 @@ body { background-color: #02b3d5 }
     #beforeafter { display: block }
     #header { background: none }
 }
+
