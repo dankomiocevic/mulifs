@@ -8,7 +8,7 @@ body.min #header {background-color: #02b3d5; border-top: none;}
 #header .links li{text-shadow:none;}
 #header .links .white,a.white,a.white:visited { color: #eee }
 #header .links a.white:hover{color:#fff}
-.main-header-btn { background-color: #02b3d5;}
-.main-header-btn:hover { background-color: #029ebd; }
+.main-header-btn { background-color: #029ebd;}
+.main-header-btn:hover { background-color: #0288a3; }
 #header #hamburger{background-color: transparent; color:#eee}
 
