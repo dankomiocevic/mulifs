@@ -18,30 +18,22 @@
 <link rel="stylesheet" type="text/css" href="css/fonts/material-icons.css">
 <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,300" rel="stylesheet" type="text/css">
 <link rel="stylesheet" type="text/css" href="css/style.css" media="screen">
+<link rel="stylesheet" type="text/css" href="css/custom.css" media="screen">
 <script type="text/javascript" src="js/jquery.min.js"></script>
 <script type="text/javascript" src="js/jquery-ui.min.js"></script>
 <script type="text/javascript" src="js/jquery.beforeafter-1.4.js"></script>
 <script src="js/angular.min.js"></script>
 <script src="js/panel.js"></script>
 <script src="js/my_controller.js"></script>
-<script type="text/javascript">
-$(function(){
-	$('#container').beforeAfter({
-	animateIntro : true,
-        introDelay : 1500,
-        introDuration : 1000,
-        showFullLinks : false
-	});
-});
-</script>
 <link rel="shortcut icon" href="images/favicon.png">
 </head>
-<body ng-controller="myCtrl" ng-init="view = hash">
+<body ng-controller="myCtrl" ng-init="view = hash" scroll id="page" ng-class="{min:boolChangeClass}" class="ng-cloak">
 <div id="header">
-    <div id="hamburger" ng-init="lateralMenu = false" ng-click="lateralMenu = !lateralMenu">
-        <i class="material-icons hamburger">&#xE5D2;</i>
-    </div>
+  <div id="hamburger" ng-init="lateralMenu = false" ng-click="lateralMenu = !lateralMenu">
+      <i class="material-icons hamburger">&#xE5D2;</i>
+  </div>
 	<div id="headerContent">
+    <div id="brandMin"><img src="images/brandMin.png"></div>
 		<ul class="links white">
 			<li><a class="white" href="https://github.com/dankomiocevic/mulifs">GitHub</a></li>
 			<li>|</li>
@@ -50,13 +42,12 @@ $(function(){
 			<li><a class="white" href="https://github.com/dankomiocevic/mulifs/archive/master.zip">Download</a></li>
 		</ul>
 		<img class="brand" src="images/brand.png">
-		<!--<p class="textXL white">Pasteurized Music Library File System</p>-->
-		<p><a href="https://github.com/dankomiocevic/mulifs" class="main-header-btn">Try it now</a></p>
+		<p id="try-it-now"><a href="https://github.com/dankomiocevic/mulifs" class="main-header-btn">Try it now</a></p>
 	</div>
-	<div id="beforeafter">
+  <div id="beforeafter">
 		<div id="container">
-		 <div><img alt="before" src="images/headerBG1.png" width="1024" height="500" /></div>
-		 <div><img alt="after" src="images/headerBG2.png" width="1024" height="500" /></div>
+		 <div><img alt="before" src="images/headerBG1.png" width="1024" height="386" /></div>
+		 <div><img alt="after" src="images/headerBG2.png" width="1024" height="386" /></div>
 		</div>
 	</div>
 </div>

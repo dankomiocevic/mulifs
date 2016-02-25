@@ -1,0 +1,14 @@
+body { background-color:#02b3d5; }
+.section#footer {border-bottom: 2px solid #02b3d5;}
+#header {background-color: #02b3d5; }
+
+body.min #header {background-color: #02b3d5; border-top: none;}
+
+#header .links {background-color: transparent; color:#eee; font-weight:400}
+#header .links li{text-shadow:none;}
+#header .links .white,a.white,a.white:visited { color: #eee }
+#header .links a.white:hover{color:#fff}
+.main-header-btn { background-color: #02b3d5;}
+.main-header-btn:hover { background-color: #029ebd; }
+#header #hamburger{background-color: transparent; color:#eee}
+
