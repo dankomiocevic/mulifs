@@ -17,7 +17,13 @@
 package main
 
 import (
+	"os"
+	"runtime"
+	"syscall"
+
+	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
+	"golang.org/x/net/context"
 )
 
 // FS struct holds information about the
@@ -37,4 +43,21 @@ func (f *FS) Root() (fs.Node, error) {
 		mPoint: f.mPoint,
 	}
 	return n, nil
+}
+
+func (f *FS) Statfs(ctx context.Context, req *fuse.StatfsRequest, resp *fuse.StatfsResponse) error {
+	if runtime.GOOS == "darwin" {
+		var stat syscall.Statfs_t
+		wd, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+		syscall.Statfs(wd, &stat)
+
+		resp.Blocks = stat.Blocks
+		resp.Bfree = stat.Bfree
+		resp.Bavail = stat.Bavail
+		resp.Bsize = stat.Bsize
+	}
+	return nil
 }
