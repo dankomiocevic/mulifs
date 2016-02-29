@@ -20,6 +20,7 @@ import (
 	"github.com/dankomiocevic/mulifs/store"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -43,7 +44,7 @@ var _ = fs.Node(&Dir{})
 func (d *Dir) Attr(ctx context.Context, a *fuse.Attr) error {
 	glog.Infof("Entered Attr dir.\n")
 	glog.Infof("Artist: %s, Album: %s\n", d.artist, d.album)
-	a.Mode = os.ModeDir | 0755
+	a.Mode = os.ModeDir | 0777
 	return nil
 }
 
@@ -55,13 +56,35 @@ var dirDirs = []fuse.Dirent{
 var _ = fs.NodeStringLookuper(&Dir{})
 
 func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
-	glog.Infof("Entering Lookup.\n")
+	glog.Infof("Entering Lookup with artist: %s, album: %s and name: %s.\n", d.artist, d.album, name)
 	if name == ".description" {
 		return &File{artist: d.artist, album: d.album, song: name, name: name, mPoint: d.mPoint}, nil
 	}
 
-	if name[0] == '.' {
-		return nil, fuse.EPERM
+	if runtime.GOOS == "darwin" {
+		// Do not allow names starting with dots except
+		// MAC special files.
+		if name[0] == '.' && (len(name) < 2 || (name[1] != '_' && name != ".DS_Store")) {
+			glog.Info("Names starting with dot are not allowed.")
+			return nil, fuse.EPERM
+		}
+
+		if name == "._.." || name == "._." {
+			glog.Info("Files ._.. and ._. are not allowed.")
+			return nil, fuse.EPERM
+		}
+
+		// MAC special files.
+		if name[0] == '.' {
+			_, err := store.GetSpecialFile(d.artist, d.album, name)
+			if err != nil {
+				glog.Info("Error getting file.")
+				return nil, err
+			} else {
+				glog.Info("Getting the file.")
+				return &File{artist: d.artist, album: d.album, song: name, name: name, mPoint: d.mPoint}, nil
+			}
+		}
 	}
 
 	if len(d.artist) < 1 {
@@ -74,6 +97,7 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 
 		_, err := store.GetArtistPath(name)
 		if err != nil {
+			glog.Error(err)
 			return nil, err
 		}
 		return &Dir{artist: name, album: "", mPoint: d.mPoint}, nil
@@ -82,6 +106,7 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 	if len(d.album) < 1 {
 		_, err := store.GetAlbumPath(d.artist, name)
 		if err != nil {
+			glog.Error(err)
 			return nil, err
 		}
 		return &Dir{artist: d.artist, album: name, mPoint: d.mPoint}, nil
@@ -89,6 +114,7 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 
 	_, err := store.GetFilePath(d.artist, d.album, name)
 	if err != nil {
+		glog.Error(err)
 		return nil, err
 	}
 	extension := filepath.Ext(name)
@@ -184,6 +210,10 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 		glog.Info("Create: File requested is write only.\n")
 	}
 
+	if runtime.GOOS == "darwin" {
+		resp.Flags |= fuse.OpenDirectIO
+	}
+
 	if len(d.artist) < 1 || len(d.album) < 1 {
 		return nil, nil, fuse.EPERM
 	}
@@ -199,6 +229,22 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 	nameRaw := req.Name
 	if nameRaw == ".description" {
 		return nil, nil, fuse.EPERM
+	}
+
+	if nameRaw == "._." || nameRaw == "._.." {
+		return nil, nil, fuse.EPERM
+	}
+
+	if len(nameRaw) > 1 && nameRaw[0] == '.' && (nameRaw[1] == '_' || nameRaw == ".DS_Store") {
+		f := &File{
+			artist:  d.artist,
+			album:   d.album,
+			song:    nameRaw,
+			name:    nameRaw,
+			mPoint:  d.mPoint,
+			writers: 1,
+		}
+		return f, &FileHandle{r: nil, f: f}, nil
 	}
 
 	rootPoint := d.mPoint
