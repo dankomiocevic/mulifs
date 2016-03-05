@@ -54,7 +54,7 @@ func GetSpecialFile(artist string, album string, name string) (returnValue []byt
 		}
 		b := buck.Get([]byte(name))
 		if b == nil {
-			glog.Errorf("Special file not found. \n")
+			glog.Info("Special file not found. \n")
 			return fuse.ENOENT
 		}
 
