@@ -17,6 +17,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/dankomiocevic/mulifs/store"
 	"io/ioutil"
 	"os"
@@ -62,30 +63,8 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 		return &File{artist: d.artist, album: d.album, song: name, name: name, mPoint: d.mPoint}, nil
 	}
 
-	if runtime.GOOS == "darwin" {
-		// Do not allow names starting with dots except
-		// MAC special files.
-		if name[0] == '.' && (len(name) < 2 || (name[1] != '_' && name != ".DS_Store")) {
-			glog.Info("Names starting with dot are not allowed.")
-			return nil, fuse.EPERM
-		}
-
-		if name == "._.." || name == "._." {
-			glog.Info("Files ._.. and ._. are not allowed.")
-			return nil, fuse.EPERM
-		}
-
-		// MAC special files.
-		if name[0] == '.' {
-			_, err := store.GetSpecialFile(d.artist, d.album, name)
-			if err != nil {
-				glog.Info("Error getting file.")
-				return nil, err
-			} else {
-				glog.Info("Getting the file.")
-				return &File{artist: d.artist, album: d.album, song: name, name: name, mPoint: d.mPoint}, nil
-			}
-		}
+	if name[0] == '.' {
+		return nil, fuse.EIO
 	}
 
 	if len(d.artist) < 1 {
@@ -364,13 +343,7 @@ func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 	}
 
 	if name[0] == '.' {
-		if runtime.GOOS == "darwin" {
-			err := store.DeleteSpecialFile(d.artist, d.album, name)
-			return err
-		} else {
-			// There are no files starting with dot if we are not in OSX
-			return nil
-		}
+		return fuse.EIO
 	}
 
 	if req.Dir {
@@ -424,6 +397,7 @@ var _ = fs.NodeRenamer(&Dir{})
 
 func (d *Dir) Rename(ctx context.Context, r *fuse.RenameRequest, newDir fs.Node) error {
 	glog.Infof("OldName: %s, NewName: %s, newDir: %s\n", r.OldName, r.NewName, newDir)
+	fmt.Printf("OldName: %s, NewName: %s, newDir: %s\n", r.OldName, r.NewName, newDir)
 
 	if newDir != d {
 		return fuse.Errno(syscall.EXDEV)
@@ -434,31 +408,7 @@ func (d *Dir) Rename(ctx context.Context, r *fuse.RenameRequest, newDir fs.Node)
 	}
 
 	if r.NewName[0] == '.' || r.OldName[0] == '.' {
-		if runtime.GOOS == "darwin" {
-			if r.NewName[0] != '.' || r.OldName[0] != '.' {
-				glog.Info("Special files can only be renamed into special files.")
-				return fuse.EPERM
-			}
-
-			// Do not allow names starting with dots except
-			// MAC special files.
-			if len(r.NewName) < 2 || (r.NewName[1] != '_' && r.NewName != ".DS_Store") {
-				glog.Info("Names starting with dot are not allowed.")
-				return fuse.EPERM
-			}
-
-			if r.NewName == "._.." || r.NewName == "._." {
-				glog.Info("Files ._.. and ._. are not allowed.")
-				return fuse.EPERM
-			}
-
-			// MAC special files.
-			//TODO: Change names in special files
-			return fuse.EPERM
-		} else {
-			// Not MAC and files start with .
-			return fuse.EPERM
-		}
+		return fuse.EPERM
 	}
 
 	if len(d.artist) < 1 {
