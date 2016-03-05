@@ -204,6 +204,24 @@ func (fh *FileHandle) Release(ctx context.Context, req *fuse.ReleaseRequest) err
 	}
 	glog.Infof("Releasing the file: %s\n", fh.r.Name())
 
+	if fh.f != nil && fh.f.artist == "drop" {
+		glog.Infof("Entered Release dropping the song: %s\n", fh.f.name)
+		ret_val := fh.r.Close()
+
+		// Get the dropped file path.
+		rootPoint := fh.f.mPoint
+		if rootPoint[len(rootPoint)-1] != '/' {
+			rootPoint = rootPoint + "/"
+		}
+
+		path := rootPoint + "drop/" + fh.f.name
+		err := store.HandleDrop(path)
+		if err != nil {
+			glog.Error(err)
+			return err
+		}
+		return ret_val
+	}
 	// This is not an music file or this is a strange situation.
 	if fh.f == nil || len(fh.f.artist) < 1 || len(fh.f.album) < 1 {
 		glog.Info("Entered Release: Artist or Album not set.\n")
@@ -216,10 +234,6 @@ func (fh *FileHandle) Release(ctx context.Context, req *fuse.ReleaseRequest) err
 	songPath, err := store.GetFilePath(fh.f.artist, fh.f.album, fh.f.name)
 	if err != nil {
 		return err
-	}
-
-	if fh.f.artist == "drop" {
-		return ret_val
 	}
 
 	if fh.f.artist == "playlist" {
