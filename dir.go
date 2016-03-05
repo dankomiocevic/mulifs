@@ -18,9 +18,11 @@ package main
 
 import (
 	"github.com/dankomiocevic/mulifs/store"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
+	"syscall"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -42,8 +44,7 @@ type Dir struct {
 var _ = fs.Node(&Dir{})
 
 func (d *Dir) Attr(ctx context.Context, a *fuse.Attr) error {
-	glog.Infof("Entered Attr dir.\n")
-	glog.Infof("Artist: %s, Album: %s\n", d.artist, d.album)
+	glog.Infof("Entered Attr dir: Artist: %s, Album: %s\n", d.artist, d.album)
 	a.Mode = os.ModeDir | 0777
 	return nil
 }
@@ -97,7 +98,7 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 
 		_, err := store.GetArtistPath(name)
 		if err != nil {
-			glog.Error(err)
+			glog.Info(err)
 			return nil, err
 		}
 		return &Dir{artist: name, album: "", mPoint: d.mPoint}, nil
@@ -106,7 +107,7 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 	if len(d.album) < 1 {
 		_, err := store.GetAlbumPath(d.artist, name)
 		if err != nil {
-			glog.Error(err)
+			glog.Info(err)
 			return nil, err
 		}
 		return &Dir{artist: d.artist, album: name, mPoint: d.mPoint}, nil
@@ -114,7 +115,7 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 
 	_, err := store.GetFilePath(d.artist, d.album, name)
 	if err != nil {
-		glog.Error(err)
+		glog.Info(err)
 		return nil, err
 	}
 	extension := filepath.Ext(name)
@@ -138,7 +139,36 @@ func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 	}
 
 	if d.artist == "drop" {
-		return nil, nil
+		if len(d.album) > 0 {
+			return nil, fuse.ENOENT
+		}
+
+		rootPoint := d.mPoint
+		if rootPoint[len(rootPoint)-1] != '/' {
+			rootPoint = rootPoint + "/"
+		}
+
+		path := rootPoint + "drop"
+		// Check if the drop directory exists
+		src, err := os.Stat(path)
+		if err != nil {
+			return nil, nil
+		}
+
+		// Check if it is a directory
+		if !src.IsDir() {
+			return nil, nil
+		}
+
+		var a []fuse.Dirent
+		files, _ := ioutil.ReadDir(path)
+		for _, f := range files {
+			var node fuse.Dirent
+			node.Name = f.Name()
+			node.Type = fuse.DT_File
+			a = append(a, node)
+		}
+		return a, nil
 	}
 	if d.artist == "playlists" {
 		return nil, nil
@@ -219,7 +249,46 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 	}
 
 	if d.artist == "drop" {
-		return nil, nil, fuse.EPERM
+		if len(d.album) > 0 {
+			return nil, nil, fuse.EIO
+		}
+
+		rootPoint := d.mPoint
+		if rootPoint[len(rootPoint)-1] != '/' {
+			rootPoint = rootPoint + "/"
+		}
+
+		name := req.Name
+		path := rootPoint + "drop/"
+
+		// Check if the drop directory exists
+		src, err := os.Stat(path)
+		if err != nil || !src.IsDir() {
+			err = os.MkdirAll(path, 0777)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+
+		fi, err := os.Create(path + name)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		extension := filepath.Ext(name)
+		keyName := name[:len(name)-len(extension)]
+		f := &File{
+			artist: d.artist,
+			album:  d.album,
+			song:   keyName,
+			name:   name,
+			mPoint: d.mPoint,
+		}
+
+		if fi != nil {
+			glog.Infof("Returning file handle for: %s.\n", fi.Name())
+		}
+		return f, &FileHandle{r: fi, f: f}, nil
 	}
 
 	if d.artist == "playlists" {
@@ -258,7 +327,7 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 		return nil, nil, fuse.EPERM
 	}
 
-	err = os.MkdirAll(path, 0755)
+	err = os.MkdirAll(path, 0777)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -290,9 +359,18 @@ func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 	name := req.Name
 	glog.Infof("Entered Remove function with Artist: %s, Album: %s and Name: %s.\n", d.artist, d.album, name)
 
-	// Do not delete files starting with dot.
+	if name == ".description" {
+		return fuse.EPERM
+	}
+
 	if name[0] == '.' {
-		return nil
+		if runtime.GOOS == "darwin" {
+			err := store.DeleteSpecialFile(d.artist, d.album, name)
+			return err
+		} else {
+			// There are no files starting with dot if we are not in OSX
+			return nil
+		}
 	}
 
 	if req.Dir {
@@ -342,9 +420,66 @@ func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 	}
 }
 
-var _ = fs.NodeRenamer(&File{})
+var _ = fs.NodeRenamer(&Dir{})
 
-func (f *File) Rename(ctx context.Context, r *fuse.RenameRequest, newDir fs.Node) error {
+func (d *Dir) Rename(ctx context.Context, r *fuse.RenameRequest, newDir fs.Node) error {
 	glog.Infof("OldName: %s, NewName: %s, newDir: %s\n", r.OldName, r.NewName, newDir)
+
+	if newDir != d {
+		return fuse.Errno(syscall.EXDEV)
+	}
+
+	if r.OldName == ".description" || r.NewName == ".description" {
+		return fuse.EPERM
+	}
+
+	if r.NewName[0] == '.' || r.OldName[0] == '.' {
+		if runtime.GOOS == "darwin" {
+			if r.NewName[0] != '.' || r.OldName[0] != '.' {
+				glog.Info("Special files can only be renamed into special files.")
+				return fuse.EPERM
+			}
+
+			// Do not allow names starting with dots except
+			// MAC special files.
+			if len(r.NewName) < 2 || (r.NewName[1] != '_' && r.NewName != ".DS_Store") {
+				glog.Info("Names starting with dot are not allowed.")
+				return fuse.EPERM
+			}
+
+			if r.NewName == "._.." || r.NewName == "._." {
+				glog.Info("Files ._.. and ._. are not allowed.")
+				return fuse.EPERM
+			}
+
+			// MAC special files.
+			//TODO: Change names in special files
+			return fuse.EPERM
+		} else {
+			// Not MAC and files start with .
+			return fuse.EPERM
+		}
+	}
+
+	if len(d.artist) < 1 {
+		//TODO: Change artist name
+		return nil
+	}
+
+	if d.artist == "drop" {
+		glog.Info("Cannot rename inside drop folder.")
+		return fuse.EPERM
+	}
+
+	if d.artist == "playlists" {
+		//TODO: Rename inside playlists.
+		return nil
+	}
+
+	if len(d.album) < 1 {
+		//TODO: Change album name
+		return nil
+	}
+
 	return nil
 }
