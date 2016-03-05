@@ -331,9 +331,11 @@ func ListSongs(artist string, album string) ([]fuse.Dirent, error) {
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			var song SongStore
-			err := json.Unmarshal(v, &song)
-			if err != nil {
-				continue
+			if k[0] != '.' || string(k) == ".description" {
+				err := json.Unmarshal(v, &song)
+				if err != nil {
+					continue
+				}
 			}
 			var node fuse.Dirent
 			node.Name = string(k)
@@ -434,7 +436,7 @@ func GetFilePath(artist string, album string, song string) (string, error) {
 		b := artistBucket.Bucket([]byte(album))
 		songJson := b.Get([]byte(song))
 		if songJson == nil {
-			glog.Errorf("Song not found. \n")
+			glog.Info("Song not found.")
 			return fuse.ENOENT
 		}
 

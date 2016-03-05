@@ -101,3 +101,92 @@ func PutSpecialFile(artist string, album string, name string, data []byte) error
 
 	return err
 }
+
+// MoveSpecialFile moves a value from one key to another in the BoltDB
+func MoveSpecialFile(oldArtist, oldAlbum, oldName, newArtist, newAlbum, newName string) error {
+	glog.Infof("Moving special file: %s Artist: %s Album: %s to new name: %s, new Artist: %s, new Album: %s\n", oldName, oldArtist, oldAlbum, newName, newArtist, newAlbum)
+
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return fuse.EIO
+	}
+	defer db.Close()
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		oldBuck := tx.Bucket([]byte("Artists"))
+		if len(oldArtist) > 1 {
+			oldBuck = oldBuck.Bucket([]byte(oldArtist))
+			if oldBuck == nil {
+				glog.Info("Artist not found.")
+				return fuse.ENOENT
+			}
+			if len(oldAlbum) > 1 {
+				oldBuck = oldBuck.Bucket([]byte(oldAlbum))
+				if oldBuck == nil {
+					glog.Info("Album not found.")
+					return fuse.ENOENT
+				}
+			}
+		}
+
+		data := oldBuck.Get([]byte(oldName))
+
+		buck := tx.Bucket([]byte("Artists"))
+		if len(newArtist) > 1 {
+			buck = buck.Bucket([]byte(newArtist))
+			if buck == nil {
+				glog.Info("Artist not found.")
+				return fuse.ENOENT
+			}
+			if len(newAlbum) > 1 {
+				buck := buck.Bucket([]byte(newAlbum))
+				if buck == nil {
+					glog.Errorf("Album not found.")
+					return fuse.ENOENT
+				}
+			}
+		}
+		b := buck.Put([]byte(newName), data)
+		if b != nil {
+			glog.Errorf("Cannot write special file. \n")
+			return fuse.EIO
+		}
+		oldBuck.Delete([]byte(oldName))
+		return nil
+	})
+
+	return err
+}
+
+// DeleteSpecialFile deletes a key for a special file in the BoltDB
+func DeleteSpecialFile(artist string, album string, name string) error {
+	glog.Infof("Deleting special file: %s Artist: %s Album: %s\n", name, artist, album)
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return fuse.EIO
+	}
+	defer db.Close()
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		buck := tx.Bucket([]byte("Artists"))
+		if len(artist) > 1 {
+			buck := buck.Bucket([]byte(artist))
+			if buck == nil {
+				glog.Errorf("Artist not found.")
+				return fuse.ENOENT
+			}
+			if len(album) > 1 {
+				buck := buck.Bucket([]byte(album))
+				if buck == nil {
+					glog.Errorf("Album not found.")
+					return fuse.ENOENT
+				}
+			}
+		}
+		buck.Delete([]byte(name))
+
+		return nil
+	})
+
+	return err
+}
