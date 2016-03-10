@@ -16,12 +16,12 @@
 
 // Package tools contains different kind of tools to
 // manage the files in the filesystem.
-// The tools include tools to read the different Tags in the
-// music files and to scan the Directories and SubDirectories in
+// The tools include tools to scan the Directories and SubDirectories in
 // the target path.
 package tools
 
 import (
+	"github.com/dankomiocevic/mulifs/musicmgr"
 	"github.com/dankomiocevic/mulifs/store"
 	"github.com/golang/glog"
 	"os"
@@ -35,7 +35,7 @@ import (
 func visit(path string, f os.FileInfo, err error) error {
 	if strings.HasSuffix(path, ".mp3") {
 		glog.Infof("Reading %s\n", path)
-		err, f := GetMp3Tags(path)
+		err, f := musicmgr.GetMp3Tags(path)
 		if err != nil {
 			glog.Errorf("Error in %s\n", path)
 		}
