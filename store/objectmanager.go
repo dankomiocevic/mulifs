@@ -22,6 +22,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/dankomiocevic/mulifs/musicmgr"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -38,13 +40,6 @@ import (
 // DbPath is the path to the database file.
 var config struct {
 	DbPath string
-}
-
-// FileTags defines the tags found in a specific music file.
-type FileTags struct {
-	Title  string
-	Artist string
-	Album  string
 }
 
 // ArtistStore is the information for a specific artist
@@ -126,7 +121,7 @@ func getCompatibleString(name string) string {
 // database accordingly. It checks the different fields
 // and completes the missing information with the default
 // data.
-func StoreNewSong(song *FileTags, path string) error {
+func StoreNewSong(song *musicmgr.FileTags, path string) error {
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return err
@@ -620,6 +615,7 @@ func CreateAlbum(artist string, nameRaw string) (string, error) {
 // will contain the compatible string to use as File
 // name and the second value will contain nil.
 func CreateSong(artist string, album string, nameRaw string, path string) (string, error) {
+	glog.Infof("Adding song to the DB: %s with Artist: %s and Album: %s\n", nameRaw, artist, album)
 	extension := filepath.Ext(nameRaw)
 	if extension != ".mp3" {
 		return "", errors.New("Wrong file format.")
@@ -655,8 +651,8 @@ func CreateSong(artist string, album string, nameRaw string, path string) (strin
 			return err
 		}
 
-		glog.Infof("Created with name: %s\n", name+extension)
 		albumBucket.Put([]byte(name+extension), encoded)
+		glog.Infof("Created with name: %s\n", name+extension)
 		return nil
 	})
 
@@ -666,6 +662,7 @@ func CreateSong(artist string, album string, nameRaw string, path string) (strin
 // DeleteArtist deletes the specified Artist only
 // in the database and returns nil if there was no error.
 func DeleteArtist(artist string) error {
+	glog.Infof("Deleting Artist: %s\n", artist)
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return err
@@ -674,6 +671,32 @@ func DeleteArtist(artist string) error {
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		root := tx.Bucket([]byte("Artists"))
+		buck := root.Bucket([]byte(artist))
+
+		c := buck.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			if k[0] == '.' {
+				continue
+			}
+			album := buck.Bucket([]byte(artist))
+			d := album.Cursor()
+			for i, _ := d.First(); i != nil; i, _ = d.Next() {
+				if i[0] == '.' {
+					continue
+				}
+				songJson := album.Get([]byte(i))
+				if songJson == nil {
+					continue
+				}
+
+				var song SongStore
+				err := json.Unmarshal(songJson, &song)
+				if err != nil {
+					continue
+				}
+				os.Remove(song.SongFullPath)
+			}
+		}
 		root.DeleteBucket([]byte(artist))
 		return nil
 	})
@@ -683,7 +706,7 @@ func DeleteArtist(artist string) error {
 // DeleteAlbum deletes the specified Album for
 // the specified Artist only in the database and
 // returns nil if there was no error.
-func DeleteAlbum(artist string, album string) error {
+func DeleteAlbum(artistName string, albumName string) error {
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return err
@@ -692,12 +715,30 @@ func DeleteAlbum(artist string, album string) error {
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		root := tx.Bucket([]byte("Artists"))
-		artistBucket := root.Bucket([]byte(artist))
+		artistBucket := root.Bucket([]byte(artistName))
 		if artistBucket == nil {
 			return errors.New("Artist not found.")
 		}
 
-		artistBucket.DeleteBucket([]byte(album))
+		album := artistBucket.Bucket([]byte(artistName))
+		d := album.Cursor()
+		for i, _ := d.First(); i != nil; i, _ = d.Next() {
+			if i[0] == '.' {
+				continue
+			}
+			songJson := album.Get([]byte(i))
+			if songJson == nil {
+				continue
+			}
+
+			var song SongStore
+			err := json.Unmarshal(songJson, &song)
+			if err != nil {
+				continue
+			}
+			os.Remove(song.SongFullPath)
+		}
+		artistBucket.DeleteBucket([]byte(albumName))
 		return nil
 	})
 	return err
@@ -707,6 +748,11 @@ func DeleteAlbum(artist string, album string) error {
 // specified Album and Artist only in the database
 // and returns nil if there was no error.
 func DeleteSong(artist string, album string, song string) error {
+	glog.Infof("Deleting song: %s with Artist: %s and Album: %s\n", song, artist, album)
+	if song[0] == '.' {
+		return nil
+	}
+
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return fuse.EIO
@@ -725,6 +771,14 @@ func DeleteSong(artist string, album string, song string) error {
 			return errors.New("Album not found.")
 		}
 
+		songJson := albumBucket.Get([]byte(song))
+		if songJson != nil {
+			var songData SongStore
+			err := json.Unmarshal(songJson, &songData)
+			if err != nil {
+				os.Remove(songData.SongFullPath)
+			}
+		}
 		albumBucket.Delete([]byte(song))
 		return nil
 	})
