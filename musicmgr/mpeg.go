@@ -14,12 +14,10 @@
 
 // Author: Danko Miocevic
 
-// Package tools contains different kind of tools to
-// manage the files in the filesystem.
+// Package musicmgr controls the tags in the music files.
 // The tools include tools to read the different Tags in the
-// music files and to scan the Directories and SubDirectories in
-// the target path.
-package tools
+// music files.
+package musicmgr
 
 import (
 	"path/filepath"
@@ -27,7 +25,7 @@ import (
 	id3 "github.com/mikkyang/id3-go"
 )
 
-// GetMp3Tags returns a store.FileTags struct with
+// GetMp3Tags returns a FileTags struct with
 // all the information obtained from the tags in the
 // MP3 file.
 // Includes the Artist, Album and Song and defines
@@ -36,13 +34,13 @@ import (
 // be stored on the file.
 // If the tags are obtained correctly the first
 // return value will be nil.
-func GetMp3Tags(path string) (error, store.FileTags) {
+func GetMp3Tags(path string) (error, FileTags) {
 	mp3File, err := id3.Open(path)
 	if err != nil {
 		_, file := filepath.Split(path)
 		extension := filepath.Ext(file)
 		songTitle := file[0 : len(file)-len(extension)]
-		return err, store.FileTags{songTitle, "unknown", "unknown"}
+		return err, FileTags{songTitle, "unknown", "unknown"}
 	}
 
 	defer mp3File.Close()
@@ -67,7 +65,7 @@ func GetMp3Tags(path string) (error, store.FileTags) {
 		mp3File.SetAlbum(album)
 	}
 
-	ft := store.FileTags{title, artist, album}
+	ft := FileTags{title, artist, album}
 	return nil, ft
 }
 

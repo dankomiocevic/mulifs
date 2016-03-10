@@ -14,12 +14,10 @@
 
 // Author: Danko Miocevic
 
-// Package tools contains different kind of tools to
-// manage the files in the filesystem.
+// Package musicmgr controls the tags in the music files.
 // The tools include tools to read the different Tags in the
-// music files and to scan the Directories and SubDirectories in
-// the target path.
-package tools
+// music files.
+package musicmgr
 
 // FileTags defines the tags found in a specific music file.
 type FileTags struct {
