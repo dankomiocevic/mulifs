@@ -17,14 +17,13 @@
 package main
 
 import (
+	"github.com/dankomiocevic/mulifs/musicmgr"
 	"github.com/dankomiocevic/mulifs/store"
-	"github.com/dankomiocevic/mulifs/tools"
 	"github.com/golang/glog"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
-	"sync"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -42,11 +41,6 @@ type File struct {
 	song   string
 	name   string
 	mPoint string
-
-	// To store special files in the DB.
-	mu      sync.Mutex
-	writers uint
-	data    []byte
 }
 
 func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
@@ -61,21 +55,7 @@ func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
 			a.Size = uint64(len(descriptionJson))
 			a.Mode = 0444
 		} else {
-			f.mu.Lock()
-			defer f.mu.Unlock()
-
-			a.Mode = 0666
-			a.Size = uint64(len(f.data))
-			if f.writers == 0 {
-				// This is read only.
-				// Get the real size from the DB
-				b, err := store.GetSpecialFile(f.artist, f.album, f.name)
-				if err == nil {
-					a.Size = uint64(len(b))
-				}
-				return err
-			}
-			return nil
+			return fuse.EPERM
 		}
 	} else {
 		songPath, err := store.GetFilePath(f.artist, f.album, f.name)
@@ -133,7 +113,7 @@ func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenR
 		return nil, err
 	}
 
-	r, err := os.Open(songPath)
+	r, err := os.OpenFile(songPath, int(req.Flags), 0666)
 	if err != nil {
 		return nil, err
 	}
@@ -156,24 +136,9 @@ func (fh *FileHandle) Release(ctx context.Context, req *fuse.ReleaseRequest) err
 			return nil
 		}
 
-		if len(fh.f.name) > 1 && fh.f.name[0] == '.' && (fh.f.name[1] == '_' || fh.f.name == ".DS_Store") {
-			glog.Infof("Entered Release: Mac special file: %s\n", fh.f.name)
-			if req.Flags.IsReadOnly() {
-				// We are not tracking read only special files.
-				glog.Info("File is Read only\n")
-				return nil
-			}
-
-			fh.f.mu.Lock()
-			defer fh.f.mu.Unlock()
-
-			fh.f.writers--
-			if fh.f.writers == 0 {
-				fh.f.data = nil
-			}
-			return nil
+		if fh.f.name[0] == '.' {
+			return fuse.EPERM
 		}
-		return nil
 	}
 
 	if fh.r == nil {
@@ -220,7 +185,7 @@ func (fh *FileHandle) Release(ctx context.Context, req *fuse.ReleaseRequest) err
 
 	if extension == ".mp3" {
 		//TODO: Use the correct artist and album
-		tools.SetMp3Tags(fh.f.artist, fh.f.album, fh.f.song, songPath)
+		musicmgr.SetMp3Tags(fh.f.artist, fh.f.album, fh.f.song, songPath)
 	}
 	return ret_val
 }
@@ -259,6 +224,9 @@ func (fh *FileHandle) Read(ctx context.Context, req *fuse.ReadRequest, resp *fus
 	}
 
 	glog.Infof("Reading file: %s.\n", fh.r.Name())
+	if _, err := fh.r.Seek(req.Offset, 0); err != nil {
+		return err
+	}
 	buf := make([]byte, req.Size)
 	n, err := fh.r.Read(buf)
 	resp.Data = buf[:n]
@@ -270,8 +238,6 @@ func (fh *FileHandle) Read(ctx context.Context, req *fuse.ReadRequest, resp *fus
 }
 
 var _ = fs.HandleWriter(&FileHandle{})
-
-const maxInt = int(^uint(0) >> 1)
 
 func (fh *FileHandle) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.WriteResponse) error {
 	glog.Infof("Entered Write\n")
@@ -285,6 +251,9 @@ func (fh *FileHandle) Write(ctx context.Context, req *fuse.WriteRequest, resp *f
 	}
 
 	glog.Infof("Writing file: %s.\n", fh.r.Name())
+	if _, err := fh.r.Seek(req.Offset, 0); err != nil {
+		return err
+	}
 	n, err := fh.r.Write(req.Data)
 	resp.Size = n
 	return err

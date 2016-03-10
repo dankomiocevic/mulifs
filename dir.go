@@ -17,13 +17,11 @@
 package main
 
 import (
-	"fmt"
 	"github.com/dankomiocevic/mulifs/store"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
-	"syscall"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -173,15 +171,29 @@ var _ = fs.NodeMkdirer(&Dir{})
 
 func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error) {
 	name := req.Name
+	glog.Infof("Entering mkdir with name: %s.\n", name)
 	// Do not allow creating directories starting with dot
 	if name[0] == '.' {
+		glog.Info("Names starting with dot are not allowed.")
 		return nil, fuse.EPERM
 	}
 
+	if d.mPoint[len(d.mPoint)-1] != '/' {
+		d.mPoint = d.mPoint + "/"
+	}
 	if len(d.artist) < 1 {
+		glog.Info("Creating an Artist.")
 		ret, err := store.CreateArtist(name)
 		if err != nil {
+			glog.Infof("Error creating artist: %s\n", err)
 			return nil, err
+		}
+
+		path := d.mPoint + ret
+		err = os.MkdirAll(path, 0777)
+		if err != nil {
+			glog.Infof("Error creating artist folder: %s\n", err)
+			return nil, fuse.EIO
 		}
 		return &Dir{fs: d.fs, artist: ret, album: "", mPoint: d.mPoint}, nil
 	}
@@ -194,9 +206,16 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 	}
 
 	if len(d.album) < 1 {
+		glog.Infof("Creating album: %s in artist: %s.\n", d.artist, name)
 		ret, err := store.CreateAlbum(d.artist, name)
 		if err != nil {
 			return nil, err
+		}
+		path := d.mPoint + d.artist + "/" + ret
+		err = os.MkdirAll(path, 0777)
+		if err != nil {
+			glog.Infof("Error creating artist folder: %s\n", err)
+			return nil, fuse.EIO
 		}
 		return &Dir{fs: d.fs, artist: d.artist, album: ret, mPoint: d.mPoint}, nil
 	}
@@ -275,24 +294,9 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 	}
 
 	nameRaw := req.Name
-	if nameRaw == ".description" {
+	if nameRaw[0] == '.' {
+		glog.Info("Cannot create files starting with dot.")
 		return nil, nil, fuse.EPERM
-	}
-
-	if nameRaw == "._." || nameRaw == "._.." {
-		return nil, nil, fuse.EPERM
-	}
-
-	if len(nameRaw) > 1 && nameRaw[0] == '.' && (nameRaw[1] == '_' || nameRaw == ".DS_Store") {
-		f := &File{
-			artist:  d.artist,
-			album:   d.album,
-			song:    nameRaw,
-			name:    nameRaw,
-			mPoint:  d.mPoint,
-			writers: 1,
-		}
-		return f, &FileHandle{r: nil, f: f}, nil
 	}
 
 	rootPoint := d.mPoint
@@ -303,16 +307,19 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 	path := rootPoint + d.artist + "/" + d.album + "/"
 	name, err := store.CreateSong(d.artist, d.album, nameRaw, path)
 	if err != nil {
+		glog.Info("Error creating song.")
 		return nil, nil, fuse.EPERM
 	}
 
 	err = os.MkdirAll(path, 0777)
 	if err != nil {
+		glog.Info("Cannot create folder.")
 		return nil, nil, err
 	}
 
 	fi, err := os.Create(path + name)
 	if err != nil {
+		glog.Infof("Cannot create file: %s\n", err)
 		return nil, nil, err
 	}
 
@@ -339,7 +346,7 @@ func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 	glog.Infof("Entered Remove function with Artist: %s, Album: %s and Name: %s.\n", d.artist, d.album, name)
 
 	if name == ".description" {
-		return fuse.EPERM
+		return nil
 	}
 
 	if name[0] == '.' {
@@ -396,22 +403,31 @@ func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 var _ = fs.NodeRenamer(&Dir{})
 
 func (d *Dir) Rename(ctx context.Context, r *fuse.RenameRequest, newDir fs.Node) error {
-	glog.Infof("OldName: %s, NewName: %s, newDir: %s\n", r.OldName, r.NewName, newDir)
-	fmt.Printf("OldName: %s, NewName: %s, newDir: %s\n", r.OldName, r.NewName, newDir)
+	var newD *Dir
 
-	if newDir != d {
-		return fuse.Errno(syscall.EXDEV)
+	newD = newDir.(*Dir)
+	glog.Infof("Renaming: OldName: %s, NewName: %s, newDir: %s/%s\n", r.OldName, r.NewName, newD.artist, newD.album)
+
+	if d.mPoint[len(d.mPoint)-1] != '/' {
+		d.mPoint = d.mPoint + "/"
 	}
+	path := d.mPoint + d.artist + "/" + d.album + "/" + r.OldName
+
+	//if newDir != d {
+	//	return fuse.Errno(syscall.EXDEV)
+	//}
 
 	if r.OldName == ".description" || r.NewName == ".description" {
 		return fuse.EPERM
 	}
 
 	if r.NewName[0] == '.' || r.OldName[0] == '.' {
+		glog.Info("Names starting with dot are not allowed.")
 		return fuse.EPERM
 	}
 
 	if len(d.artist) < 1 {
+		glog.Info("Changing artist name.")
 		//TODO: Change artist name
 		return nil
 	}
@@ -422,14 +438,24 @@ func (d *Dir) Rename(ctx context.Context, r *fuse.RenameRequest, newDir fs.Node)
 	}
 
 	if d.artist == "playlists" {
+		glog.Info("Rename inside playlists folder.")
 		//TODO: Rename inside playlists.
 		return nil
 	}
 
 	if len(d.album) < 1 {
-		//TODO: Change album name
-		return nil
+		glog.Info("Moving album")
+		if len(newD.album) > 0 {
+			return fuse.EPERM
+		}
+
+		err := store.MoveAlbum(d.artist, r.OldName, newD.artist, r.NewName, d.mPoint)
+		return err
 	}
 
+	err := store.MoveSongs(d.artist, d.album, r.OldName, newD.artist, newD.album, r.NewName, path, d.mPoint)
+	if err != nil {
+		return fuse.EIO
+	}
 	return nil
 }
