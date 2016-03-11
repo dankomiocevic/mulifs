@@ -1,0 +1,25 @@
+[general]
+
+project_name=MuliFS
+slogan_subtitle=Music Library Filesystem
+project_first_letter=M
+button_path=https://github.com/dankomiocevic/mulifs
+button_label=Try it now
+load_hash=#
+
+
+[colors]
+
+main_color=fc880f
+main_color_hover=fd6631
+header_bg=eee
+
+
+[links]
+
+link1=GitHub
+link1_label=https://github.com/dankomiocevic/mulifs
+link2=Doc
+link2_label=http://dankomiocevic.github.io/mulifs/#doc
+link3=Download
+link3_label=https://github.com/dankomiocevic/mulifs/archive/master.zip
