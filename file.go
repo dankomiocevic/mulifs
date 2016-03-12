@@ -245,7 +245,7 @@ func (fh *FileHandle) Write(ctx context.Context, req *fuse.WriteRequest, resp *f
 		if fh.f.name == ".description" {
 			glog.Errorf("Not allowed to write description file.\n")
 			//TODO: Allow to write description
-			return fuse.EPERM
+			return nil
 		}
 		return fuse.EIO
 	}

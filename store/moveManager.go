@@ -116,6 +116,41 @@ func processNewAlbum(newArtist, newAlbum, oldArtist, oldAlbum string) ([][]byte,
 			albumBucket.Put([]byte(".description"), encoded)
 		}
 
+		// Update the Artist description
+		var artistStore ArtistStore
+		// Update the description of the Artist
+		descValue := artistBucket.Get([]byte(".description"))
+		if descValue == nil {
+			artistStore.ArtistName = newArtist
+			artistStore.ArtistPath = newArtist
+			artistStore.ArtistAlbums = []string{newAlbum}
+		} else {
+			err := json.Unmarshal(descValue, &artistStore)
+			if err != nil {
+				artistStore.ArtistName = newArtist
+				artistStore.ArtistPath = newArtist
+				artistStore.ArtistAlbums = []string{newAlbum}
+			}
+
+			var found bool = false
+			for _, a := range artistStore.ArtistAlbums {
+				if a == newAlbum {
+					found = true
+					break
+				}
+			}
+
+			if found == false {
+				artistStore.ArtistAlbums = append(artistStore.ArtistAlbums, newAlbum)
+			}
+		}
+		encoded, err := json.Marshal(artistStore)
+		if err != nil {
+			return err
+		}
+		artistBucket.Put([]byte(".description"), encoded)
+
+		// Get oldArtist Bucket
 		oldArtistBucket := root.Bucket([]byte(oldArtist))
 		if oldArtistBucket == nil {
 			glog.Info("Source Artist not found.")
@@ -128,6 +163,25 @@ func processNewAlbum(newArtist, newAlbum, oldArtist, oldAlbum string) ([][]byte,
 			return errors.New("Album not found")
 		}
 
+		// Remove the Album from the Artist description
+		descValue = oldArtistBucket.Get([]byte(".description"))
+		if descValue != nil {
+			err := json.Unmarshal(descValue, &artistStore)
+			if err == nil {
+				for i, a := range artistStore.ArtistAlbums {
+					if a == oldAlbum {
+						artistStore.ArtistAlbums = append(artistStore.ArtistAlbums[:i], artistStore.ArtistAlbums[i+1:]...)
+						break
+					}
+				}
+
+				encoded, err := json.Marshal(artistStore)
+				if err != nil {
+					return err
+				}
+				oldArtistBucket.Put([]byte(".description"), encoded)
+			}
+		}
 		// Get all the songs and store it in a temporary slice
 		c := oldAlbumBucket.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -170,11 +224,14 @@ func MoveAlbum(oldArtist, oldAlbum, newArtist, newAlbum, mPoint string) error {
 	}
 	newPath := rootPoint + newArtist + "/" + newAlbum + "/"
 
-	// Create the directory
-	err := os.Mkdir(newPath, 0777)
-	if err != nil {
-		glog.Info("Cannot create the new directory.")
-		return fuse.EIO
+	// Create the directory if not exists
+	src, err := os.Stat(newPath)
+	if err != nil || !src.IsDir() {
+		err := os.Mkdir(newPath, 0777)
+		if err != nil {
+			glog.Infof("Cannot create the new directory: %s.", err)
+			return fuse.EIO
+		}
 	}
 
 	var songs [][]byte
