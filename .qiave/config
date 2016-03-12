@@ -5,7 +5,7 @@ slogan_subtitle=Music Library Filesystem
 project_first_letter=M
 button_path=https://github.com/dankomiocevic/mulifs
 button_label=Try it now
-load_hash=#MuLiFS--Music-Library-Filesystem
+load_hash=MuLiFS--Music-Library-Filesystem
 
 
 [colors]
