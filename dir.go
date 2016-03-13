@@ -428,8 +428,12 @@ func (d *Dir) Rename(ctx context.Context, r *fuse.RenameRequest, newDir fs.Node)
 
 	if len(d.artist) < 1 {
 		glog.Info("Changing artist name.")
-		//TODO: Change artist name
-		return nil
+		if len(newD.artist) > 0 {
+			return fuse.EPERM
+		}
+
+		err := store.MoveArtist(r.OldName, r.NewName, d.mPoint)
+		return err
 	}
 
 	if d.artist == "drop" {

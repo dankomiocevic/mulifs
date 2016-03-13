@@ -506,9 +506,13 @@ func CreateArtist(nameRaw string) (string, error) {
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		root := tx.Bucket([]byte("Artists"))
-		artistBucket, createError := root.CreateBucketIfNotExists([]byte(name))
+		artistBucket, createError := root.CreateBucket([]byte(name))
 		if createError != nil {
-			return createError
+			if createError == bolt.ErrBucketExists {
+				return fuse.EEXIST
+			} else {
+				return fuse.EIO
+			}
 		}
 
 		var artistStore ArtistStore
@@ -552,6 +556,16 @@ func CreateAlbum(artist string, nameRaw string) (string, error) {
 		}
 
 		var artistStore ArtistStore
+		// Create the album bucket
+		albumBucket, createError := artistBucket.CreateBucket([]byte(name))
+		if createError != nil {
+			if createError == bolt.ErrBucketExists {
+				return fuse.EEXIST
+			} else {
+				return fuse.EIO
+			}
+		}
+
 		// Update the description of the Artist
 		descValue := artistBucket.Get([]byte(".description"))
 		if descValue == nil {
@@ -583,12 +597,6 @@ func CreateAlbum(artist string, nameRaw string) (string, error) {
 			return err
 		}
 		artistBucket.Put([]byte(".description"), encoded)
-
-		// Create the album bucket
-		albumBucket, createError := artistBucket.CreateBucketIfNotExists([]byte(name))
-		if createError != nil {
-			return createError
-		}
 
 		// Update the album description
 		var albumStore AlbumStore

@@ -21,7 +21,6 @@ package store
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/dankomiocevic/mulifs/musicmgr"
 	"os"
 	"path/filepath"
@@ -72,6 +71,87 @@ func MoveSongs(oldArtist, oldAlbum, oldName, newArtist, newAlbum, newName, path,
 	return err
 }
 
+/** processNewArtist returns all the albums inside an Artist and
+ *  prepares the new folder for the new Artist.
+ *  It also creates the description files and Buckets in the DB.
+ */
+func processNewArtist(newArtist, oldArtist string) ([]string, error) {
+	var albums []string
+
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		glog.Error("Error opening the database.")
+		return nil, err
+	}
+	defer db.Close()
+
+	newArtistRaw := newArtist
+	newArtist = getCompatibleString(newArtist)
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		root := tx.Bucket([]byte("Artists"))
+
+		// Get oldArtist Bucket
+		oldArtistBucket := root.Bucket([]byte(oldArtist))
+		if oldArtistBucket == nil {
+			glog.Info("Source Artist not found.")
+			return errors.New("Artist not found")
+		}
+
+		// Get the description file or create it if it does not exist
+		oldDescription := oldArtistBucket.Get([]byte(".description"))
+		if oldDescription != nil {
+			var oldArtistStore ArtistStore
+
+			err := json.Unmarshal(oldDescription, &oldArtistStore)
+			if err == nil {
+				albums = make([]string, len(oldArtistStore.ArtistAlbums))
+				copy(albums, oldArtistStore.ArtistAlbums)
+			} else {
+				albums = make([]string, 0)
+			}
+		}
+
+		// Create the bucket
+		artistBucket, err := root.CreateBucketIfNotExists([]byte(newArtist))
+		if err != nil {
+			glog.Info("Cannot create Artist bucket.")
+			return fuse.EIO
+		}
+
+		// Get the description file or create it if it does not exist
+		description := artistBucket.Get([]byte(".description"))
+		var artistStore ArtistStore
+		if description == nil {
+			artistStore = ArtistStore{
+				ArtistName:   newArtistRaw,
+				ArtistPath:   newArtist,
+				ArtistAlbums: albums,
+			}
+		} else {
+			err := json.Unmarshal(description, &artistStore)
+			if err != nil {
+				return fuse.EIO
+			}
+			copy(artistStore.ArtistAlbums, albums)
+		}
+
+		encoded, err := json.Marshal(artistStore)
+		if err != nil {
+			glog.Info("Cannot encode description JSON.")
+			return fuse.EIO
+		}
+		artistBucket.Put([]byte(".description"), encoded)
+
+		return nil
+	})
+	return albums, err
+}
+
+/** processNewAlbum returns all the songs inside an Album and
+ *  prepares the new folder for the new Album.
+ *  It also creates the description files and Buckets in the DB.
+ */
 func processNewAlbum(newArtist, newAlbum, oldArtist, oldAlbum string) ([][]byte, error) {
 	var songs [][]byte
 
@@ -244,7 +324,6 @@ func MoveAlbum(oldArtist, oldAlbum, newArtist, newAlbum, mPoint string) error {
 	// Move all the songs inside the Album
 	for _, element := range songs {
 		var song SongStore
-		fmt.Printf("Element: %s.\n", element)
 		err := json.Unmarshal(element, &song)
 		if err != nil {
 			glog.Info("Cannot unmarshall JSON")
@@ -268,6 +347,67 @@ func MoveAlbum(oldArtist, oldAlbum, newArtist, newAlbum, mPoint string) error {
 			return errors.New("Artist not found.")
 		}
 		err = artistBucket.DeleteBucket([]byte(oldAlbum))
+		return err
+	})
+
+	if err != nil {
+		return fuse.EIO
+	}
+	return nil
+}
+
+// MoveArtist changes the Artist path.
+// It modifies the information in the database
+// and updates the tags to match the new location
+// on every song inside every album.
+// It also moves the actual files into the new location.
+func MoveArtist(oldArtist, newArtist, mPoint string) error {
+	glog.Infof("Moving Artist from: %s to  %s\n", oldArtist, newArtist)
+
+	// Check that all the information is ready
+	if len(oldArtist) < 1 || len(newArtist) < 1 {
+		return fuse.EIO
+	}
+
+	rootPoint := mPoint
+	if rootPoint[len(rootPoint)-1] != '/' {
+		rootPoint = rootPoint + "/"
+	}
+	newPath := rootPoint + newArtist + "/"
+
+	// Create the directory if not exists
+	src, err := os.Stat(newPath)
+	if err != nil || !src.IsDir() {
+		err := os.Mkdir(newPath, 0777)
+		if err != nil {
+			glog.Infof("Cannot create the new directory: %s.", err)
+			return fuse.EIO
+		}
+	}
+
+	var albums []string
+	albums, err = processNewArtist(newArtist, oldArtist)
+	if err != nil {
+		return err
+	}
+
+	glog.Infof("Moving %d albums.\n", len(albums))
+	// Move all the songs inside the Album
+	for _, element := range albums {
+		MoveAlbum(oldArtist, element, newArtist, element, mPoint)
+	}
+
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		glog.Error("Error opening the database.")
+		return err
+	}
+	defer db.Close()
+
+	// Finally delete the old Album bucket
+	err = db.Update(func(tx *bolt.Tx) error {
+		root := tx.Bucket([]byte("Artists"))
+		err = root.DeleteBucket([]byte(oldArtist))
 		return err
 	})
 
