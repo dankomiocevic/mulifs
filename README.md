@@ -251,6 +251,12 @@ mulifs [global_options] MUSIC_SOURCE MOUNTPOINT
 * vmodule value: comma-separated list of pattern=N settings for file-filtered logging
 
 
+ToDo
+----
+- Playlists manager 
+- Heavy testing! (I mean, testing routines, testing functions, all the testing stuff!)
+
+
 License
 -------
 
