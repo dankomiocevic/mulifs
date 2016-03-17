@@ -81,7 +81,7 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 		return &Dir{artist: name, album: "", mPoint: d.mPoint}, nil
 	}
 
-	if len(d.album) < 1 {
+	if len(d.album) < 1 && d.artist != "drop" {
 		_, err := store.GetAlbumPath(d.artist, name)
 		if err != nil {
 			glog.Info(err)
@@ -90,10 +90,19 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 		return &Dir{artist: d.artist, album: name, mPoint: d.mPoint}, nil
 	}
 
-	_, err := store.GetFilePath(d.artist, d.album, name)
-	if err != nil {
-		glog.Info(err)
-		return nil, err
+	var err error
+	if d.artist == "drop" {
+		_, err = store.GetDropFilePath(name, d.mPoint)
+		if err != nil {
+			glog.Info(err)
+			return nil, fuse.ENOENT
+		}
+	} else {
+		_, err = store.GetFilePath(d.artist, d.album, name)
+		if err != nil {
+			glog.Info(err)
+			return nil, err
+		}
 	}
 	extension := filepath.Ext(name)
 	songName := name[:len(name)-len(extension)]
@@ -242,12 +251,9 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 		resp.Flags |= fuse.OpenDirectIO
 	}
 
-	if len(d.artist) < 1 || len(d.album) < 1 {
-		return nil, nil, fuse.EPERM
-	}
-
 	if d.artist == "drop" {
 		if len(d.album) > 0 {
+			glog.Info("Subdirectories are not allowed in drop folder.")
 			return nil, nil, fuse.EIO
 		}
 
@@ -258,22 +264,29 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 
 		name := req.Name
 		path := rootPoint + "drop/"
+		extension := filepath.Ext(name)
+
+		if extension != ".mp3" {
+			glog.Info("Only mp3 files are allowed.")
+			return nil, nil, fuse.EIO
+		}
 
 		// Check if the drop directory exists
 		src, err := os.Stat(path)
 		if err != nil || !src.IsDir() {
 			err = os.MkdirAll(path, 0777)
 			if err != nil {
+				glog.Infof("Cannot create dir: %s\n", err)
 				return nil, nil, err
 			}
 		}
 
 		fi, err := os.Create(path + name)
 		if err != nil {
+			glog.Infof("Cannot create file: %s\n", err)
 			return nil, nil, err
 		}
 
-		extension := filepath.Ext(name)
 		keyName := name[:len(name)-len(extension)]
 		f := &File{
 			artist: d.artist,
@@ -287,6 +300,10 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 			glog.Infof("Returning file handle for: %s.\n", fi.Name())
 		}
 		return f, &FileHandle{r: fi, f: f}, nil
+	}
+
+	if len(d.artist) < 1 || len(d.album) < 1 {
+		return nil, nil, fuse.EPERM
 	}
 
 	if d.artist == "playlists" {

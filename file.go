@@ -17,6 +17,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/dankomiocevic/mulifs/musicmgr"
 	"github.com/dankomiocevic/mulifs/store"
 	"github.com/golang/glog"
@@ -43,8 +44,15 @@ type File struct {
 	mPoint string
 }
 
+/** This function is used to do nothing to the file
+ *	but to update the Touch time.
+ */
+func DelayedVoid(f File) error {
+	return nil
+}
+
 func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
-	glog.Infof("Entering file Attr with name: %s.\n", f.name)
+	glog.Infof("Entering file Attr with name: %s, Artist: %s and Album: %s.\n", f.name, f.artist, f.album)
 	if f.name[0] == '.' {
 		if f.name == ".description" {
 			descriptionJson, err := store.GetDescription(f.artist, f.album, f.name)
@@ -58,19 +66,30 @@ func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
 			return fuse.EPERM
 		}
 	} else {
-		songPath, err := store.GetFilePath(f.artist, f.album, f.name)
+		var songPath string
+		var err error
+		if f.artist == "drop" {
+			songPath, err = store.GetDropFilePath(f.name, f.mPoint)
+			PushFileItem(*f, nil)
+		} else {
+			songPath, err = store.GetFilePath(f.artist, f.album, f.name)
+		}
+
 		if err != nil {
+			glog.Infof("Error getting song path: %s\n", err)
 			return err
 		}
 
 		r, err := os.Open(songPath)
 		if err != nil {
+			glog.Infof("Error opening file: %s\n", err)
 			return err
 		}
 		defer r.Close()
 
 		fi, err := r.Stat()
 		if err != nil {
+			glog.Infof("Error getting file status: %s\n", err)
 			return err
 		}
 
@@ -107,7 +126,14 @@ func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenR
 		glog.Info("Open: File requested is write only.\n")
 	}
 
-	songPath, err := store.GetFilePath(f.artist, f.album, f.name)
+	var err error
+	var songPath string
+	if f.artist == "drop" {
+		songPath, err = store.GetDropFilePath(f.name, f.mPoint)
+		PushFileItem(*f, DelayedVoid)
+	} else {
+		songPath, err = store.GetFilePath(f.artist, f.album, f.name)
+	}
 	if err != nil {
 		glog.Error(err)
 		return nil, err
@@ -126,6 +152,27 @@ type FileHandle struct {
 }
 
 var _ fs.Handle = (*FileHandle)(nil)
+
+/** DelayedHandleDrop handles a dropped file
+ *  but is called by the background dispatcher
+ *  after some time has passed.
+ */
+func DelayedHandleDrop(f File) error {
+	// Get the dropped file path.
+	rootPoint := f.mPoint
+	if rootPoint[len(rootPoint)-1] != '/' {
+		rootPoint = rootPoint + "/"
+	}
+
+	path := rootPoint + "drop/" + f.name
+	err := store.HandleDrop(path, rootPoint)
+	fmt.Printf("DelayedHandleDrop: %s\n", path)
+	if err != nil {
+		glog.Error(err)
+		return err
+	}
+	return nil
+}
 
 var _ fs.HandleReleaser = (*FileHandle)(nil)
 
@@ -151,18 +198,7 @@ func (fh *FileHandle) Release(ctx context.Context, req *fuse.ReleaseRequest) err
 		glog.Infof("Entered Release dropping the song: %s\n", fh.f.name)
 		ret_val := fh.r.Close()
 
-		// Get the dropped file path.
-		rootPoint := fh.f.mPoint
-		if rootPoint[len(rootPoint)-1] != '/' {
-			rootPoint = rootPoint + "/"
-		}
-
-		path := rootPoint + "drop/" + fh.f.name
-		err := store.HandleDrop(path)
-		if err != nil {
-			glog.Error(err)
-			return err
-		}
+		PushFileItem(*fh.f, DelayedHandleDrop)
 		return ret_val
 	}
 	// This is not an music file or this is a strange situation.

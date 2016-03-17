@@ -729,6 +729,9 @@ func DeleteAlbum(artistName string, albumName string) error {
 		}
 
 		album := artistBucket.Bucket([]byte(artistName))
+		if album == nil {
+			return nil
+		}
 		d := album.Cursor()
 		for i, _ := d.First(); i != nil; i, _ = d.Next() {
 			if i[0] == '.' {
