@@ -255,6 +255,7 @@ ToDo
 ----
 - Playlists manager 
 - Heavy testing! (I mean, testing routines, testing functions, all the testing stuff!)
+- Add the ability to drop entire folders to the drop folder.
 
 
 License
