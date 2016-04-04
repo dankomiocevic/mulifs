@@ -81,15 +81,10 @@ mounted_path
 └── playlists
      │
      └── Music_I_Like
-           ├── Other_Artist
-           │     └── Some_Album
-           │           ├── Great_Song.mp3
-           │           └── AwesomeSong.mp3
+           ├── Great_Song.mp3 
+           ├── AwesomeSong.mp3 
            ├── ...
-           └── Some_Artist
-                 └── Some_Album
-                       ├── Great_Song.mp3
-                       └── AwesomeSong.mp3
+           └── Other_song.mp3 
 
 ```
 Lets take a look at this Directory structure! 
@@ -118,7 +113,7 @@ Library consistent and keeps every Song updated!
 If you create or copy a new Song file inside any folder, the Tags inside the
 file will be modified accordingly.
 
-Directoriee and Songs can be created and moved and it modifies the Tags
+Directories and Songs can be created and moved and it modifies the Tags
 on the Songs and creates or modifies Artists and Albums.
 Again, be careful! If you delete a Directory it will be PERMANENT for the
 Songs inside it!
@@ -133,8 +128,8 @@ the parent Directories, just drop it here!
 2. playlists: This Directory manages the playlists, for every playlist
 in the Source Directory, all the files inside it are analyzed and 
 the same Directory structure will be created. Then a playlist will
-contain Artists and Albums folders for every Song inside it. The format
-used in playlists is M3U.
+be a Directory with the music files. The format
+used in playlists is M3U. 
 
 
 Description files
