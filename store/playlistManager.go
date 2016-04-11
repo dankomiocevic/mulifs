@@ -22,6 +22,7 @@ import (
 	"errors"
 	"github.com/boltdb/bolt"
 	"github.com/dankomiocevic/mulifs/playlistmgr"
+	"github.com/golang/glog"
 	"io/ioutil"
 	"os"
 )
@@ -186,6 +187,33 @@ func ListPlaylistSongs(playlist, mPoint string) ([]fuse.Dirent, error) {
 // also creates it in the filesystem.
 // It receives the playlist name and returns the modified name and an
 // error if something went wrong.
-func CreatePlaylist(name string) (string, error) {
-	return "", nil
+func CreatePlaylist(name, mPoint string) (string, error) {
+	name = getCompatibleString(name)
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return "", err
+	}
+	defer db.Close()
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		root, err := tx.CreateBucketIfNotExists([]byte("Playlists"))
+		if err != nil {
+			glog.Errorf("Error creating Playlists bucket: %s\n", err)
+			return err
+		}
+
+		_, err = root.CreateBucketIfNotExists([]byte(name))
+		if err != nil {
+			glog.Errorf("Error creating %s bucket: %s\n", name, err)
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+
+	playlistmgr.RegeneratePlaylistFile(name, mPoint)
+	return name, nil
 }

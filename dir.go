@@ -233,7 +233,7 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 
 	if d.artist == "playlists" {
 		if len(d.album) < 1 {
-			ret, err := store.CreatePlaylist(name)
+			ret, err := store.CreatePlaylist(name, d.mPoint)
 			if err != nil {
 				glog.Infof("Error creating playlist: %s\n", err)
 				return nil, err

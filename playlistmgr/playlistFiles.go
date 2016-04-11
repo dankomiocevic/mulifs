@@ -107,6 +107,6 @@ func DeletePlaylistAlbum(playlist, artist, album string) error {
 /** RegeneratePlaylistFile creates the playlist file from the
  * information in the database.
  */
-func RegeneratePlaylistFile(playlist string) error {
+func RegeneratePlaylistFile(playlist, mPoint string) error {
 	return nil
 }
