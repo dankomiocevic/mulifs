@@ -56,5 +56,6 @@ func visit(path string, f os.FileInfo, err error) error {
 // and calls visit on every endpoint found.
 func ScanFolder(root string) error {
 	err := filepath.Walk(root, visit)
+	// TODO: Scan playlists
 	return err
 }
