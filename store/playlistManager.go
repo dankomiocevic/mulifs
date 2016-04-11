@@ -18,7 +18,11 @@ package store
 
 import (
 	"bazil.org/fuse"
+	"encoding/json"
+	"errors"
 	"github.com/boltdb/bolt"
+	"github.com/dankomiocevic/mulifs/playlistmgr"
+	"os"
 )
 
 // GetPlaylistFilePath function should return the path for a specific
@@ -37,7 +41,53 @@ import (
 // This function returns a string containing the file path and an error
 // that will be nil if everything is ok.
 func GetPlaylistFilePath(playlist, song, mPoint string) (string, error) {
-	return "", nil
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return "", err
+	}
+	defer db.Close()
+
+	var returnValue string
+	err = db.View(func(tx *bolt.Tx) error {
+		root := tx.Bucket([]byte("Playlists"))
+		if root == nil {
+			return errors.New("No playlists.")
+		}
+		playlistBucket := root.Bucket([]byte(playlist))
+		if playlistBucket == nil {
+			return errors.New("Playlist not exists.")
+		}
+
+		songJson := playlistBucket.Get([]byte(song))
+		if songJson == nil {
+			return errors.New("Song not found.")
+		}
+
+		var file playlistmgr.PlaylistFile
+		err := json.Unmarshal(songJson, &file)
+		if err != nil {
+			return errors.New("Cannot open song.")
+		}
+		returnValue = file.Path
+		return nil
+	})
+
+	if err == nil {
+		return returnValue, nil
+	}
+
+	if mPoint[len(mPoint)-1] != '/' {
+		mPoint = mPoint + "/"
+	}
+
+	fullPath := mPoint + "playlists/" + playlist + "/" + song
+	// Check if the file exists
+	src, err := os.Stat(fullPath)
+	if err != nil || src.IsDir() {
+		return "", errors.New("File not exists.")
+	}
+
+	return fullPath, nil
 }
 
 // ListPlaylists function returns all the names of the playlists available
