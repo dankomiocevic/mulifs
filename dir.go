@@ -172,7 +172,7 @@ func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 			return a, nil
 		}
 
-		a, err := store.ListPlaylistSongs(d.album)
+		a, err := store.ListPlaylistSongs(d.album, d.mPoint)
 		if err != nil {
 			return nil, fuse.ENOENT
 		}

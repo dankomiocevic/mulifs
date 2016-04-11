@@ -22,6 +22,7 @@ import (
 	"errors"
 	"github.com/boltdb/bolt"
 	"github.com/dankomiocevic/mulifs/playlistmgr"
+	"io/ioutil"
 	"os"
 )
 
@@ -126,7 +127,7 @@ func ListPlaylists() ([]fuse.Dirent, error) {
 // temporary drop directory named after the playlist.
 // It receives a playlist name and returns a slice with all the
 // files.
-func ListPlaylistSongs(playlist string) ([]fuse.Dirent, error) {
+func ListPlaylistSongs(playlist, mPoint string) ([]fuse.Dirent, error) {
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return nil, err
@@ -161,6 +162,21 @@ func ListPlaylistSongs(playlist string) ([]fuse.Dirent, error) {
 		return nil, err
 	}
 
+	if mPoint[len(mPoint)-1] != '/' {
+		mPoint = mPoint + "/"
+	}
+
+	fullPath := mPoint + "playlists/" + playlist + "/"
+
+	files, _ := ioutil.ReadDir(fullPath)
+	for _, f := range files {
+		if !f.IsDir() {
+			var node fuse.Dirent
+			node.Name = string(f.Name())
+			node.Type = fuse.DT_File
+			a = append(a, node)
+		}
+	}
 	return a, nil
 
 	return nil, nil
