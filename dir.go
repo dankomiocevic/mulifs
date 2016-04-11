@@ -67,10 +67,10 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 
 	if len(d.artist) < 1 {
 		if name == "drop" {
-			return &Dir{artist: "drop", album: "", mPoint: d.mPoint}, nil
+			return &Dir{fs: d.fs, artist: "drop", album: "", mPoint: d.mPoint}, nil
 		}
 		if name == "playlists" {
-			return &Dir{artist: "playlists", album: "", mPoint: d.mPoint}, nil
+			return &Dir{fs: d.fs, artist: "playlists", album: "", mPoint: d.mPoint}, nil
 		}
 
 		_, err := store.GetArtistPath(name)
@@ -78,21 +78,27 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 			glog.Info(err)
 			return nil, err
 		}
-		return &Dir{artist: name, album: "", mPoint: d.mPoint}, nil
+		return &Dir{fs: d.fs, artist: name, album: "", mPoint: d.mPoint}, nil
 	}
 
-	if len(d.album) < 1 && d.artist != "drop" {
+	if len(d.album) < 1 && d.artist != "drop" && d.artist != "playlists" {
 		_, err := store.GetAlbumPath(d.artist, name)
 		if err != nil {
 			glog.Info(err)
 			return nil, err
 		}
-		return &Dir{artist: d.artist, album: name, mPoint: d.mPoint}, nil
+		return &Dir{fs: d.fs, artist: d.artist, album: name, mPoint: d.mPoint}, nil
 	}
 
 	var err error
 	if d.artist == "drop" {
 		_, err = store.GetDropFilePath(name, d.mPoint)
+		if err != nil {
+			glog.Info(err)
+			return nil, fuse.ENOENT
+		}
+	} else if d.artist == "playlists" {
+		_, err = store.GetPlaylistFilePath(d.album, name, d.mPoint)
 		if err != nil {
 			glog.Info(err)
 			return nil, fuse.ENOENT
@@ -156,8 +162,22 @@ func (d *Dir) ReadDirAll(ctx context.Context) ([]fuse.Dirent, error) {
 		}
 		return a, nil
 	}
+
 	if d.artist == "playlists" {
-		return nil, nil
+		if len(d.album) < 1 {
+			a, err := store.ListPlaylists()
+			if err != nil {
+				return nil, fuse.ENOENT
+			}
+			return a, nil
+		}
+
+		a, err := store.ListPlaylistSongs(d.album)
+		if err != nil {
+			return nil, fuse.ENOENT
+		}
+
+		return a, nil
 	}
 
 	if len(d.album) < 1 {
@@ -210,8 +230,18 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 	if d.artist == "drop" {
 		return nil, fuse.EIO
 	}
+
 	if d.artist == "playlists" {
-		return nil, fuse.EIO
+		if len(d.album) < 1 {
+			ret, err := store.CreatePlaylist(name)
+			if err != nil {
+				glog.Infof("Error creating playlist: %s\n", err)
+				return nil, err
+			}
+
+			return &Dir{fs: d.fs, artist: "playlists", album: ret, mPoint: d.mPoint}, nil
+		}
+		return nil, fuse.EPERM
 	}
 
 	if len(d.album) < 1 {
@@ -302,11 +332,58 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 		return f, &FileHandle{r: fi, f: f}, nil
 	}
 
-	if len(d.artist) < 1 || len(d.album) < 1 {
-		return nil, nil, fuse.EPERM
+	if d.artist == "playlists" {
+		if len(d.album) < 1 {
+			glog.Info("Files are not allowed outside playlists.")
+			return nil, nil, fuse.EIO
+		}
+
+		rootPoint := d.mPoint
+		if rootPoint[len(rootPoint)-1] != '/' {
+			rootPoint = rootPoint + "/"
+		}
+
+		name := req.Name
+		path := rootPoint + "playlists/" + d.album
+		extension := filepath.Ext(name)
+
+		if extension != ".mp3" {
+			glog.Info("Only mp3 files are allowed.")
+			return nil, nil, fuse.EIO
+		}
+
+		// Check if the playlist drop directory exists
+		src, err := os.Stat(path)
+		if err != nil || !src.IsDir() {
+			err = os.MkdirAll(path, 0777)
+			if err != nil {
+				glog.Infof("Cannot create dir: %s\n", err)
+				return nil, nil, err
+			}
+		}
+
+		fi, err := os.Create(path + name)
+		if err != nil {
+			glog.Infof("Cannot create file: %s\n", err)
+			return nil, nil, err
+		}
+
+		keyName := name[:len(name)-len(extension)]
+		f := &File{
+			artist: d.artist,
+			album:  d.album,
+			song:   keyName,
+			name:   name,
+			mPoint: d.mPoint,
+		}
+
+		if fi != nil {
+			glog.Infof("Returning file handle for: %s.\n", fi.Name())
+		}
+		return f, &FileHandle{r: fi, f: f}, nil
 	}
 
-	if d.artist == "playlists" {
+	if len(d.artist) < 1 || len(d.album) < 1 {
 		return nil, nil, fuse.EPERM
 	}
 
@@ -359,6 +436,7 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 var _ = fs.NodeRemover(&Dir{})
 
 func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
+	//TODO: Correct this function to work with drop and playlists folder.
 	name := req.Name
 	glog.Infof("Entered Remove function with Artist: %s, Album: %s and Name: %s.\n", d.artist, d.album, name)
 

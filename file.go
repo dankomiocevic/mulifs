@@ -71,6 +71,9 @@ func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
 		if f.artist == "drop" {
 			songPath, err = store.GetDropFilePath(f.name, f.mPoint)
 			PushFileItem(*f, nil)
+		} else if f.artist == "playlists" {
+			songPath, err = store.GetPlaylistFilePath(f.album, f.name, f.mPoint)
+			PushFileItem(*f, nil)
 		} else {
 			songPath, err = store.GetFilePath(f.artist, f.album, f.name)
 		}
@@ -131,6 +134,9 @@ func (f *File) Open(ctx context.Context, req *fuse.OpenRequest, resp *fuse.OpenR
 	if f.artist == "drop" {
 		songPath, err = store.GetDropFilePath(f.name, f.mPoint)
 		PushFileItem(*f, DelayedVoid)
+	} else if f.artist == "playlists" {
+		songPath, err = store.GetPlaylistFilePath(f.album, f.name, f.mPoint)
+		PushFileItem(*f, DelayedVoid)
 	} else {
 		songPath, err = store.GetFilePath(f.artist, f.album, f.name)
 	}
@@ -153,10 +159,16 @@ type FileHandle struct {
 
 var _ fs.Handle = (*FileHandle)(nil)
 
-/** DelayedHandleDrop handles a dropped file
- *  but is called by the background dispatcher
- *  after some time has passed.
- */
+// DelayedHandlePlaylistSong handles a dropped file
+// inside a playlist and is called by the background
+// dispatcher after some time has passed.
+func DelayedHandlePlaylistSong(f File) error {
+	return nil
+}
+
+// DelayedHandleDrop handles a dropped file
+// but is called by the background dispatcher
+// after some time has passed.
 func DelayedHandleDrop(f File) error {
 	// Get the dropped file path.
 	rootPoint := f.mPoint
@@ -201,6 +213,15 @@ func (fh *FileHandle) Release(ctx context.Context, req *fuse.ReleaseRequest) err
 		PushFileItem(*fh.f, DelayedHandleDrop)
 		return ret_val
 	}
+
+	if fh.f != nil && fh.f.artist == "playlists" {
+		glog.Infof("Entered Release with playlist song: %s\n", fh.f.name)
+		ret_val := fh.r.Close()
+
+		PushFileItem(*fh.f, DelayedHandlePlaylistSong)
+		return ret_val
+	}
+
 	// This is not an music file or this is a strange situation.
 	if fh.f == nil || len(fh.f.artist) < 1 || len(fh.f.album) < 1 {
 		glog.Info("Entered Release: Artist or Album not set.\n")
@@ -215,10 +236,6 @@ func (fh *FileHandle) Release(ctx context.Context, req *fuse.ReleaseRequest) err
 		return err
 	}
 
-	if fh.f.artist == "playlist" {
-		return ret_val
-	}
-
 	if extension == ".mp3" {
 		//TODO: Use the correct artist and album
 		musicmgr.SetMp3Tags(fh.f.artist, fh.f.album, fh.f.song, songPath)
@@ -230,6 +247,7 @@ var _ = fs.HandleReader(&FileHandle{})
 
 func (fh *FileHandle) Read(ctx context.Context, req *fuse.ReadRequest, resp *fuse.ReadResponse) error {
 	glog.Infof("Entered Read.\n")
+	//TODO: Check if we need to add something here for playlists and drop directories.
 	if fh.r == nil {
 		if fh.f.name == ".description" {
 			glog.Info("Reading description file\n")
@@ -277,6 +295,7 @@ var _ = fs.HandleWriter(&FileHandle{})
 
 func (fh *FileHandle) Write(ctx context.Context, req *fuse.WriteRequest, resp *fuse.WriteResponse) error {
 	glog.Infof("Entered Write\n")
+	//TODO: Check if we need to add something here for playlists and drop directories.
 	if fh.r == nil {
 		if fh.f.name == ".description" {
 			glog.Errorf("Not allowed to write description file.\n")
