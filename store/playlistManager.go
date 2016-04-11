@@ -18,6 +18,7 @@ package store
 
 import (
 	"bazil.org/fuse"
+	"github.com/boltdb/bolt"
 )
 
 // GetPlaylistFilePath function should return the path for a specific
@@ -44,7 +45,30 @@ func GetPlaylistFilePath(playlist, song, mPoint string) (string, error) {
 // It receives no arguments and returns a slice of Dir objects to list
 // all the available playlists and the error if there is any.
 func ListPlaylists() ([]fuse.Dirent, error) {
-	return nil, nil
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	var a []fuse.Dirent
+	err = db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("Playlists"))
+		if b == nil {
+			return nil
+		}
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if v == nil {
+				var node fuse.Dirent
+				node.Name = string(k)
+				node.Type = fuse.DT_Dir
+				a = append(a, node)
+			}
+		}
+		return nil
+	})
+	return a, nil
 }
 
 // ListPlaylistSongs function returns all the songs inside a playlist.
@@ -53,6 +77,42 @@ func ListPlaylists() ([]fuse.Dirent, error) {
 // It receives a playlist name and returns a slice with all the
 // files.
 func ListPlaylistSongs(playlist string) ([]fuse.Dirent, error) {
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	var a []fuse.Dirent
+	err = db.View(func(tx *bolt.Tx) error {
+		root := tx.Bucket([]byte("Playlists"))
+		if root == nil {
+			return nil
+		}
+
+		b := root.Bucket([]byte(playlist))
+		if b == nil {
+			return nil
+		}
+
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if v != nil {
+				var node fuse.Dirent
+				node.Name = string(k)
+				node.Type = fuse.DT_File
+				a = append(a, node)
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return a, nil
+
 	return nil, nil
 }
 
