@@ -10,9 +10,9 @@ load_hash=MuLiFS--Music-Library-Filesystem
 
 [colors]
 
-main_color=fc880f
-main_color_hover=fd6631
-header_bg=eee
+main_color=02b3d5
+main_color_hover=0288a3
+header_bg=02b3d5
 
 
 [links]
