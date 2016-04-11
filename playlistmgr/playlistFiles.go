@@ -23,9 +23,12 @@ import (
 	"os"
 )
 
+// FileTags defines the tags found in a specific music file.
 type PlaylistFile struct {
-	Title string
-	Path  string
+	Title  string
+	Artist string
+	Album  string
+	Path   string
 }
 
 /** CheckPlaylistFile opens a Playlist file and checks that

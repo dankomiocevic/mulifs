@@ -435,13 +435,13 @@ func GetFilePath(artist string, album string, song string) (string, error) {
 			return fuse.ENOENT
 		}
 
-		var song SongStore
-		err := json.Unmarshal(songJson, &song)
+		var songStore SongStore
+		err := json.Unmarshal(songJson, &songStore)
 		if err != nil {
 			glog.Error("Cannot open song.")
 			return errors.New("Cannot open song.")
 		}
-		returnValue = song.SongFullPath
+		returnValue = songStore.SongFullPath
 		return nil
 	})
 
