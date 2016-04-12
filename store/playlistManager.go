@@ -214,6 +214,47 @@ func CreatePlaylist(name, mPoint string) (string, error) {
 		return "", err
 	}
 
-	playlistmgr.RegeneratePlaylistFile(name, mPoint)
+	RegeneratePlaylistFile(name, mPoint)
 	return name, nil
+}
+
+// RegeneratePlaylistFile creates the playlist file from the
+// information in the database.
+func RegeneratePlaylistFile(name, mPoint string) error {
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	var a []playlistmgr.PlaylistFile
+	err = db.View(func(tx *bolt.Tx) error {
+		root := tx.Bucket([]byte("Playlists"))
+		if root == nil {
+			return errors.New("Cannot open root bucket.")
+		}
+
+		b := root.Bucket([]byte(name))
+		if b == nil {
+			return nil
+		}
+
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if v != nil {
+				var file playlistmgr.PlaylistFile
+				err := json.Unmarshal(v, &file)
+				if err != nil {
+					a = append(a, file)
+				}
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return playlistmgr.RegeneratePlaylistFile(a, name, mPoint)
 }
