@@ -95,18 +95,24 @@ func ProcessPlaylist(path string) ([]PlaylistFile, error) {
 	return a, err
 }
 
-// AddPlaylistSong receives an item from a playlist and
-// adds it to the playlist Bucket in the database.
-// It also checks that the song exists in the database
-// and adds the playlist link to the specific song.
-func AddPlaylistSong(playlist, artist, album, song string) error {
-	return nil
-}
+// DeletePlaylist deletes a playlist from the filesystem.
+func DeletePlaylist(playlist, mPoint string) error {
+	if mPoint[len(mPoint)-1] != '/' {
+		mPoint = mPoint + "/"
+	}
 
-// DeletePlaylist deletes a playlist file.
-// It also deletes the contents on the database and deletes
-// the playlist entries on each individual file.
-func DeletePlaylist(playlist string) error {
+	path := mPoint + playlist
+	src, err := os.Stat(path)
+	if err == nil && src.IsDir() {
+		os.Remove(path)
+	}
+
+	path = path + ".m3u"
+	_, err = os.Stat(path)
+	if err == nil {
+		os.Remove(path)
+	}
+
 	return nil
 }
 

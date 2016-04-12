@@ -298,3 +298,29 @@ func AddFilesToPlaylist(file playlistmgr.PlaylistFile, playlistName string) erro
 
 	return err
 }
+
+// DeletePlaylist function deletes a playlist from the database
+// and also deletes all the entries in the specific files and
+// deletes it from the filesystem.
+func DeletePlaylist(name, mPoint string) error {
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		root := tx.Bucket([]byte("Playlists"))
+		if root == nil {
+			glog.Errorf("Error opening Playlists bucket: %s\n", err)
+			return err
+		}
+		//TODO: Scan all the files in the playlist and remove the
+		// connections with songs in MuLi.
+
+		err := root.DeleteBucket([]byte(name))
+		return err
+	})
+
+	return playlistmgr.DeletePlaylist(name, mPoint)
+}

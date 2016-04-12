@@ -436,7 +436,7 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 var _ = fs.NodeRemover(&Dir{})
 
 func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
-	//TODO: Correct this function to work with drop and playlists folder.
+	//TODO: Correct this function to work with drop folder.
 	name := req.Name
 	glog.Infof("Entered Remove function with Artist: %s, Album: %s and Name: %s.\n", d.artist, d.album, name)
 
@@ -459,6 +459,11 @@ func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 				return fuse.EIO
 			}
 
+			return nil
+		}
+
+		if d.artist == "playlists" {
+			store.DeletePlaylist(name, d.mPoint)
 			return nil
 		}
 
