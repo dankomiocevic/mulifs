@@ -22,24 +22,45 @@ package tools
 
 import (
 	"github.com/dankomiocevic/mulifs/playlistmgr"
-
+	"github.com/dankomiocevic/mulifs/store"
 	"github.com/golang/glog"
+	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
 // visitPlaylist checks that the specified file is
 // a music file and is on the correct path.
 // If it is ok, it stores it on the database.
-func visitPlaylist(path string, f os.FileInfo, err error) error {
-	if strings.HasSuffix(path, ".m3u") {
-		glog.Infof("Reading %s\n", path)
-		err := playlistmgr.CheckPlaylistFile(path)
+func visitPlaylist(name, path, mPoint string) error {
+	if path[len(path)-1] != '/' {
+		path = path + "/"
+	}
+
+	fullPath := path + name
+	if strings.HasSuffix(fullPath, ".m3u") {
+		glog.Infof("Reading %s\n", fullPath)
+		err := playlistmgr.CheckPlaylistFile(fullPath)
 		if err != nil {
-			glog.Errorf("Error in %s\n", path)
+			glog.Infof("Error in %s playlist\n", name)
+			return err
 		}
-		playlistmgr.ProcessPlaylist(path)
+
+		files, err := playlistmgr.ProcessPlaylist(fullPath)
+		if err != nil {
+			glog.Infof("Problem reading playlist %s: %s\n", name, err)
+			return err
+		}
+
+		playlistName := name[:len(name)-len(".m3u")]
+		playlistName, _ = store.CreatePlaylist(playlistName, mPoint)
+
+		for _, f := range files {
+			store.AddFilesToPlaylist(f, playlistName)
+		}
+
+		os.Remove(fullPath)
+		store.RegeneratePlaylistFile(playlistName, mPoint)
 	}
 	return nil
 }
@@ -49,6 +70,16 @@ func visitPlaylist(path string, f os.FileInfo, err error) error {
 // It uses filepath to walk through the file tree
 // and calls visit on every endpoint found.
 func ScanPlaylistFolder(root string) error {
-	err := filepath.Walk(root, visitPlaylist)
-	return err
+	if root[len(root)-1] != '/' {
+		root = root + "/"
+	}
+
+	fullPath := root + "playlists/"
+	files, _ := ioutil.ReadDir(fullPath)
+	for _, f := range files {
+		if !f.IsDir() {
+			visitPlaylist(f.Name(), fullPath, root)
+		}
+	}
+	return nil
 }

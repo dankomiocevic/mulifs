@@ -91,13 +91,19 @@ func main() {
 		os.Exit(6)
 	}
 
+	err = tools.ScanPlaylistFolder(path)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(7)
+	}
+
 	// Init the dispatcher system to process
 	// delayed events.
 	InitDispatcher()
 
 	if err = mount(path, mountpoint); err != nil {
 		log.Fatal(err)
-		os.Exit(7)
+		os.Exit(8)
 	}
 }
 

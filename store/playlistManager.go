@@ -214,8 +214,8 @@ func CreatePlaylist(name, mPoint string) (string, error) {
 		return "", err
 	}
 
-	RegeneratePlaylistFile(name, mPoint)
-	return name, nil
+	err = RegeneratePlaylistFile(name, mPoint)
+	return name, err
 }
 
 // RegeneratePlaylistFile creates the playlist file from the
@@ -257,4 +257,44 @@ func RegeneratePlaylistFile(name, mPoint string) error {
 	}
 
 	return playlistmgr.RegeneratePlaylistFile(a, name, mPoint)
+}
+
+// AddFileToPlaylist function adds a file to a specific playlist.
+// The function also checks that the file exist in the MuLi database.
+func AddFilesToPlaylist(file playlistmgr.PlaylistFile, playlistName string) error {
+	path, err := GetFilePath(file.Artist, file.Album, file.Title)
+	if err != nil {
+		return errors.New("Playlist item not found in MuLi.")
+	}
+
+	file.Path = path
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		root := tx.Bucket([]byte("Playlists"))
+		if root == nil {
+			glog.Errorf("Error opening Playlists bucket: %s\n", err)
+			return err
+		}
+
+		playlistBucket := root.Bucket([]byte(playlistName))
+		if playlistBucket == nil {
+			glog.Errorf("Error opening %s playlist bucket: %s\n", playlistName, err)
+			return err
+		}
+
+		encoded, err := json.Marshal(file)
+		if err != nil {
+			glog.Errorf("Cannot encode PlaylistFile.")
+			return err
+		}
+		playlistBucket.Put([]byte(file.Title), encoded)
+		return nil
+	})
+
+	return err
 }

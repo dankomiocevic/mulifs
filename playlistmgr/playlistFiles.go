@@ -19,9 +19,11 @@
 package playlistmgr
 
 import (
+	"bufio"
 	"errors"
 	"github.com/golang/glog"
 	"os"
+	"strings"
 )
 
 // FileTags defines the tags found in a specific music file.
@@ -40,6 +42,7 @@ func CheckPlaylistFile(path string) error {
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
 	firstLine := make([]byte, len("#EXTM3U"))
 	_, err = f.Read(firstLine)
@@ -58,8 +61,38 @@ func CheckPlaylistFile(path string) error {
 // and adds all the information into the database.
 // It process every line in the file and reads all the
 // songs in it.
-func ProcessPlaylist(path string) error {
-	return nil
+func ProcessPlaylist(path string) ([]PlaylistFile, error) {
+	var a []PlaylistFile
+	src, err := os.Stat(path)
+	if err != nil || src.IsDir() {
+		return a, errors.New("Playlist not found.")
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return a, errors.New("Cannot open playlist file.")
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "#MULI ") {
+			line = line[len("#MULI "):]
+			items := strings.Split(line, " - ")
+			if len(items) != 3 {
+				var playlistFile PlaylistFile
+				playlistFile.Artist = items[0]
+				playlistFile.Album = items[1]
+				playlistFile.Title = items[2]
+				a = append(a, playlistFile)
+			}
+		}
+	}
+
+	err = scanner.Err()
+	return a, err
 }
 
 // AddPlaylistSong receives an item from a playlist and
