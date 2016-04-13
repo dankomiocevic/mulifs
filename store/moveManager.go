@@ -49,7 +49,7 @@ func MoveSongs(oldArtist, oldAlbum, oldName, newArtist, newAlbum, newName, path,
 	}
 
 	newPath := rootPoint + newArtist + "/" + newAlbum + "/"
-	newFullPath := newPath + getCompatibleString(newName[:len(newName)-len(extension)]) + extension
+	newFullPath := newPath + GetCompatibleString(newName[:len(newName)-len(extension)]) + extension
 
 	err := os.Rename(path, newFullPath)
 	if err != nil {
@@ -86,7 +86,7 @@ func processNewArtist(newArtist, oldArtist string) ([]string, error) {
 	defer db.Close()
 
 	newArtistRaw := newArtist
-	newArtist = getCompatibleString(newArtist)
+	newArtist = GetCompatibleString(newArtist)
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		root := tx.Bucket([]byte("Artists"))
@@ -163,7 +163,7 @@ func processNewAlbum(newArtist, newAlbum, oldArtist, oldAlbum string) ([][]byte,
 	defer db.Close()
 
 	newAlbumRaw := newAlbum
-	newAlbum = getCompatibleString(newAlbum)
+	newAlbum = GetCompatibleString(newAlbum)
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		root := tx.Bucket([]byte("Artists"))

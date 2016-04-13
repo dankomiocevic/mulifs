@@ -17,8 +17,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/dankomiocevic/mulifs/musicmgr"
+	"github.com/dankomiocevic/mulifs/playlistmgr"
 	"github.com/dankomiocevic/mulifs/store"
 	"github.com/golang/glog"
 	"io"
@@ -163,7 +165,61 @@ var _ fs.Handle = (*FileHandle)(nil)
 // inside a playlist and is called by the background
 // dispatcher after some time has passed.
 func DelayedHandlePlaylistSong(f File) error {
-	return nil
+	rootPoint := f.mPoint
+	if rootPoint[len(rootPoint)-1] != '/' {
+		rootPoint = rootPoint + "/"
+	}
+
+	path := rootPoint + "playlists/" + f.album + "/" + f.name
+
+	extension := filepath.Ext(f.name)
+	if extension != ".mp3" {
+		os.Remove(path)
+		return errors.New("File is not an mp3.")
+	}
+
+	src, err := os.Stat(path)
+	if err != nil || src.IsDir() {
+		return errors.New("File not found.")
+	}
+
+	err, tags := musicmgr.GetMp3Tags(path)
+	if err != nil {
+		os.Remove(path)
+		return err
+	}
+
+	artist := store.GetCompatibleString(tags.Artist)
+	album := store.GetCompatibleString(tags.Album)
+	title := store.GetCompatibleString(tags.Title)
+	newPath, err := store.GetFilePath(artist, album, title)
+	if err == nil {
+		var playlistFile playlistmgr.PlaylistFile
+		playlistFile.Title = title
+		playlistFile.Artist = artist
+		playlistFile.Album = album
+		playlistFile.Path = newPath
+		err = store.AddFileToPlaylist(playlistFile, f.album)
+	} else {
+		err = store.HandleDrop(path, rootPoint)
+		if err == nil {
+			newPath, err = store.GetFilePath(artist, album, title)
+			if err == nil {
+				var playlistFile playlistmgr.PlaylistFile
+				playlistFile.Title = title
+				playlistFile.Artist = artist
+				playlistFile.Album = album
+				playlistFile.Path = newPath
+				err = store.AddFileToPlaylist(playlistFile, f.album)
+			}
+		}
+	}
+
+	os.Remove(path)
+	if err == nil {
+		err = store.RegeneratePlaylistFile(f.album, rootPoint)
+	}
+	return err
 }
 
 // DelayedHandleDrop handles a dropped file

@@ -63,7 +63,7 @@ func HandleDrop(path, rootPoint string) error {
 	newPath := rootPoint + artist + "/" + album + "/"
 	os.MkdirAll(newPath, 0777)
 
-	file := getCompatibleString(fileTags.Title) + extension
+	file := GetCompatibleString(fileTags.Title) + extension
 	err = os.Rename(path, newPath+file)
 	if err != nil {
 		glog.Infof("Error renaming song: %s\n", err)

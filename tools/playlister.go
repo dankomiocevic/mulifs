@@ -56,7 +56,7 @@ func visitPlaylist(name, path, mPoint string) error {
 		playlistName, _ = store.CreatePlaylist(playlistName, mPoint)
 
 		for _, f := range files {
-			store.AddFilesToPlaylist(f, playlistName)
+			store.AddFileToPlaylist(f, playlistName)
 		}
 
 		os.Remove(fullPath)

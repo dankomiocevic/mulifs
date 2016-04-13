@@ -98,10 +98,10 @@ func isMn(r rune) bool {
 	return unicode.Is(unicode.Mn, r)
 }
 
-// getCompatibleString removes all the special characters
+// GetCompatibleString removes all the special characters
 // from the string name to create a new string compatible
 // with different file names.
-func getCompatibleString(name string) string {
+func GetCompatibleString(name string) string {
 	// Replace all the & signs with and text
 	name = strings.Replace(name, "&", "and", -1)
 	// Change all the characters to ASCII
@@ -141,9 +141,9 @@ func StoreNewSong(song *musicmgr.FileTags, path string) error {
 		}
 
 		// Generate the compatible names for the fields
-		artistPath := getCompatibleString(song.Artist)
-		albumPath := getCompatibleString(song.Album)
-		songPath := getCompatibleString(song.Title)
+		artistPath := GetCompatibleString(song.Artist)
+		albumPath := GetCompatibleString(song.Album)
+		songPath := GetCompatibleString(song.Title)
 
 		// Generate artist bucket
 		artistBucket, updateError := artistsBucket.CreateBucketIfNotExists([]byte(artistPath))
@@ -427,9 +427,21 @@ func GetFilePath(artist string, album string, song string) (string, error) {
 
 	err = db.View(func(tx *bolt.Tx) error {
 		root := tx.Bucket([]byte("Artists"))
+		if root == nil {
+			return fuse.EIO
+		}
+
 		artistBucket := root.Bucket([]byte(artist))
-		b := artistBucket.Bucket([]byte(album))
-		songJson := b.Get([]byte(song))
+		if artistBucket == nil {
+			return fuse.ENOENT
+		}
+
+		albumBucket := artistBucket.Bucket([]byte(album))
+		if albumBucket == nil {
+			return fuse.ENOENT
+		}
+
+		songJson := albumBucket.Get([]byte(song))
 		if songJson == nil {
 			glog.Info("Song not found.")
 			return fuse.ENOENT
@@ -497,7 +509,7 @@ func GetDescription(artist string, album string, name string) (string, error) {
 // If there is an error it will be specified in the
 // error return value, nil otherwise.
 func CreateArtist(nameRaw string) (string, error) {
-	name := getCompatibleString(nameRaw)
+	name := GetCompatibleString(nameRaw)
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return name, err
@@ -541,7 +553,7 @@ func CreateArtist(nameRaw string) (string, error) {
 // will contain the compatible string to use as Directory
 // name and the second value will contain nil.
 func CreateAlbum(artist string, nameRaw string) (string, error) {
-	name := getCompatibleString(nameRaw)
+	name := GetCompatibleString(nameRaw)
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return name, err
@@ -630,7 +642,7 @@ func CreateSong(artist string, album string, nameRaw string, path string) (strin
 	}
 
 	nameRaw = nameRaw[:len(nameRaw)-len(extension)]
-	name := getCompatibleString(nameRaw)
+	name := GetCompatibleString(nameRaw)
 
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {

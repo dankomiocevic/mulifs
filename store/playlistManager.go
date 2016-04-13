@@ -188,7 +188,7 @@ func ListPlaylistSongs(playlist, mPoint string) ([]fuse.Dirent, error) {
 // It receives the playlist name and returns the modified name and an
 // error if something went wrong.
 func CreatePlaylist(name, mPoint string) (string, error) {
-	name = getCompatibleString(name)
+	name = GetCompatibleString(name)
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return "", err
@@ -261,7 +261,7 @@ func RegeneratePlaylistFile(name, mPoint string) error {
 
 // AddFileToPlaylist function adds a file to a specific playlist.
 // The function also checks that the file exist in the MuLi database.
-func AddFilesToPlaylist(file playlistmgr.PlaylistFile, playlistName string) error {
+func AddFileToPlaylist(file playlistmgr.PlaylistFile, playlistName string) error {
 	path, err := GetFilePath(file.Artist, file.Album, file.Title)
 	if err != nil {
 		return errors.New("Playlist item not found in MuLi.")
