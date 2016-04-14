@@ -248,7 +248,7 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 				return nil, err
 			}
 
-			err = store.RegeneratePlaylistFile(name, d.mPoint)
+			err = store.RegeneratePlaylistFile(ret, d.mPoint)
 			if err != nil {
 				glog.Infof("Error regenerating playlist: %s\n", err)
 				return nil, err
