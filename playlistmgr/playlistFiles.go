@@ -119,6 +119,7 @@ func DeletePlaylist(playlist, mPoint string) error {
 // RegeneratePlaylistFile creates the playlist file from the
 // information in the database.
 func RegeneratePlaylistFile(songs []PlaylistFile, playlist, mPoint string) error {
+	glog.Infof("Regenerating playlist file for playlist: %s\n", playlist)
 	if mPoint[len(mPoint)-1] != '/' {
 		mPoint = mPoint + "/"
 	}
@@ -138,16 +139,46 @@ func RegeneratePlaylistFile(songs []PlaylistFile, playlist, mPoint string) error
 	defer f.Close()
 
 	_, err = f.WriteString("#EXTM3U\n")
+	if err != nil {
+		glog.Infof("Cannot write on file.")
+	}
 	for _, s := range songs {
 		_, err = f.WriteString("#MULI ")
+		if err != nil {
+			glog.Infof("Cannot write on file.")
+		}
 		_, err = f.WriteString(s.Artist)
+		if err != nil {
+			glog.Infof("Cannot write on file.")
+		}
 		_, err = f.WriteString(" - ")
+		if err != nil {
+			glog.Infof("Cannot write on file.")
+		}
 		_, err = f.WriteString(s.Album)
+		if err != nil {
+			glog.Infof("Cannot write on file.")
+		}
 		_, err = f.WriteString(" - ")
+		if err != nil {
+			glog.Infof("Cannot write on file.")
+		}
 		_, err = f.WriteString(s.Title)
+		if err != nil {
+			glog.Infof("Cannot write on file.")
+		}
 		_, err = f.WriteString("\n")
+		if err != nil {
+			glog.Infof("Cannot write on file.")
+		}
 		_, err = f.WriteString(s.Path)
+		if err != nil {
+			glog.Infof("Cannot write on file.")
+		}
 		_, err = f.WriteString("\n\n")
+		if err != nil {
+			glog.Infof("Cannot write on file.")
+		}
 	}
 
 	f.Sync()

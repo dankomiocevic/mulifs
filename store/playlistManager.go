@@ -27,6 +27,35 @@ import (
 	"os"
 )
 
+// GetPlaylistPath checks that a specified playlist
+// exists on the database and returns an
+// error if it does not.
+// It also returns the playlist name as string.
+func GetPlaylistPath(playlist string) (string, error) {
+	glog.Infof("Entered Playlist path with playlist: %s\n", playlist)
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return "", err
+	}
+	defer db.Close()
+
+	err = db.View(func(tx *bolt.Tx) error {
+		root := tx.Bucket([]byte("Playlists"))
+		if root == nil {
+			return errors.New("No playlists.")
+		}
+
+		playlistBucket := root.Bucket([]byte(playlist))
+		if playlistBucket == nil {
+			return errors.New("Playlist not exists.")
+		}
+
+		return nil
+	})
+
+	return playlist, err
+}
+
 // GetPlaylistFilePath function should return the path for a specific
 // file in a specific playlist.
 // The file could be on two places, first option is that the file is
@@ -43,6 +72,7 @@ import (
 // This function returns a string containing the file path and an error
 // that will be nil if everything is ok.
 func GetPlaylistFilePath(playlist, song, mPoint string) (string, error) {
+	glog.Infof("Entered Playlist file path with song: %s, and playlist: %s\n", song, playlist)
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return "", err
@@ -97,6 +127,7 @@ func GetPlaylistFilePath(playlist, song, mPoint string) (string, error) {
 // It receives no arguments and returns a slice of Dir objects to list
 // all the available playlists and the error if there is any.
 func ListPlaylists() ([]fuse.Dirent, error) {
+	glog.Info("Entered list playlists.")
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return nil, err
@@ -107,6 +138,7 @@ func ListPlaylists() ([]fuse.Dirent, error) {
 	err = db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("Playlists"))
 		if b == nil {
+			glog.Infof("There is no Playlists bucket.")
 			return nil
 		}
 		c := b.Cursor()
@@ -129,6 +161,7 @@ func ListPlaylists() ([]fuse.Dirent, error) {
 // It receives a playlist name and returns a slice with all the
 // files.
 func ListPlaylistSongs(playlist, mPoint string) ([]fuse.Dirent, error) {
+	glog.Infof("Listing contents of playlist %s.\n", playlist)
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return nil, err
@@ -188,6 +221,7 @@ func ListPlaylistSongs(playlist, mPoint string) ([]fuse.Dirent, error) {
 // It receives the playlist name and returns the modified name and an
 // error if something went wrong.
 func CreatePlaylist(name, mPoint string) (string, error) {
+	glog.Infof("Creating Playlist with name: %s\n", name)
 	name = GetCompatibleString(name)
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
@@ -214,13 +248,13 @@ func CreatePlaylist(name, mPoint string) (string, error) {
 		return "", err
 	}
 
-	err = RegeneratePlaylistFile(name, mPoint)
 	return name, err
 }
 
 // RegeneratePlaylistFile creates the playlist file from the
 // information in the database.
 func RegeneratePlaylistFile(name, mPoint string) error {
+	glog.Infof("Regenerating playlist for name: %s\n", name)
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return err
@@ -231,12 +265,14 @@ func RegeneratePlaylistFile(name, mPoint string) error {
 	err = db.View(func(tx *bolt.Tx) error {
 		root := tx.Bucket([]byte("Playlists"))
 		if root == nil {
-			return errors.New("Cannot open root bucket.")
+			glog.Info("Cannot open Playlists bucket.")
+			return errors.New("Cannot open Playlists bucket.")
 		}
 
 		b := root.Bucket([]byte(name))
 		if b == nil {
-			return nil
+			glog.Infof("Playlist %s not exists", name)
+			return errors.New("Playlist not exists.")
 		}
 
 		c := b.Cursor()

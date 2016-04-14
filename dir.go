@@ -98,10 +98,19 @@ func (d *Dir) Lookup(ctx context.Context, name string) (fs.Node, error) {
 			return nil, fuse.ENOENT
 		}
 	} else if d.artist == "playlists" {
-		_, err = store.GetPlaylistFilePath(d.album, name, d.mPoint)
-		if err != nil {
-			glog.Info(err)
-			return nil, fuse.ENOENT
+		if len(d.album) < 1 {
+			_, err = store.GetPlaylistPath(name)
+			if err != nil {
+				glog.Info(err)
+				return nil, fuse.ENOENT
+			}
+			return &Dir{fs: d.fs, artist: d.artist, album: name, mPoint: d.mPoint}, nil
+		} else {
+			_, err = store.GetPlaylistFilePath(d.album, name, d.mPoint)
+			if err != nil {
+				glog.Info(err)
+				return nil, fuse.ENOENT
+			}
 		}
 	} else {
 		_, err = store.GetFilePath(d.artist, d.album, name)
@@ -239,6 +248,11 @@ func (d *Dir) Mkdir(ctx context.Context, req *fuse.MkdirRequest) (fs.Node, error
 				return nil, err
 			}
 
+			err = store.RegeneratePlaylistFile(name, d.mPoint)
+			if err != nil {
+				glog.Infof("Error regenerating playlist: %s\n", err)
+				return nil, err
+			}
 			return &Dir{fs: d.fs, artist: "playlists", album: ret, mPoint: d.mPoint}, nil
 		}
 		return nil, fuse.EPERM
