@@ -21,6 +21,7 @@ package playlistmgr
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"github.com/golang/glog"
 	"os"
 	"strings"
@@ -101,7 +102,7 @@ func DeletePlaylist(playlist, mPoint string) error {
 		mPoint = mPoint + "/"
 	}
 
-	path := mPoint + playlist
+	path := mPoint + "playlists/" + playlist
 	src, err := os.Stat(path)
 	if err == nil && src.IsDir() {
 		os.Remove(path)
@@ -124,9 +125,14 @@ func RegeneratePlaylistFile(songs []PlaylistFile, playlist, mPoint string) error
 		mPoint = mPoint + "/"
 	}
 
-	path := mPoint + playlist + ".m3u"
+	_, err := os.Stat(mPoint + "playlists")
+	if err != nil {
+		os.Mkdir(mPoint+"playlists/", 0777)
+	}
 
-	_, err := os.Stat(path)
+	path := mPoint + "playlists/" + playlist + ".m3u"
+
+	_, err = os.Stat(path)
 	if err == nil {
 		os.Remove(path)
 	}
@@ -142,7 +148,9 @@ func RegeneratePlaylistFile(songs []PlaylistFile, playlist, mPoint string) error
 	if err != nil {
 		glog.Infof("Cannot write on file.")
 	}
+	fmt.Printf("Total songs: %d\n", len(songs))
 	for _, s := range songs {
+		fmt.Printf("Adding song: %s\n", s.Title)
 		_, err = f.WriteString("#MULI ")
 		if err != nil {
 			glog.Infof("Cannot write on file.")

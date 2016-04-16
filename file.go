@@ -27,6 +27,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -191,7 +192,12 @@ func DelayedHandlePlaylistSong(f File) error {
 
 	artist := store.GetCompatibleString(tags.Artist)
 	album := store.GetCompatibleString(tags.Album)
-	title := store.GetCompatibleString(tags.Title)
+	title := tags.Title
+	if strings.HasSuffix(title, ".mp3") {
+		title = title[:len(title)-len(".mp3")]
+	}
+	title = store.GetCompatibleString(title) + ".mp3"
+
 	newPath, err := store.GetFilePath(artist, album, title)
 	if err == nil {
 		var playlistFile playlistmgr.PlaylistFile

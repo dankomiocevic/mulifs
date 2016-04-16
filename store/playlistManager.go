@@ -280,8 +280,10 @@ func RegeneratePlaylistFile(name, mPoint string) error {
 			if v != nil {
 				var file playlistmgr.PlaylistFile
 				err := json.Unmarshal(v, &file)
-				if err != nil {
+				if err == nil {
 					a = append(a, file)
+				} else {
+					glog.Errorf("Cannot unmarshal Playlist File %s: %s\n", k, err)
 				}
 			}
 		}

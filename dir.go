@@ -376,7 +376,7 @@ func (d *Dir) Create(ctx context.Context, req *fuse.CreateRequest, resp *fuse.Cr
 			}
 		}
 
-		fi, err := os.Create(path + name)
+		fi, err := os.Create(path + "/" + name)
 		if err != nil {
 			glog.Infof("Cannot create file: %s\n", err)
 			return nil, nil, err
