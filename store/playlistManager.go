@@ -316,13 +316,13 @@ func AddFileToPlaylist(file playlistmgr.PlaylistFile, playlistName string) error
 		root := tx.Bucket([]byte("Playlists"))
 		if root == nil {
 			glog.Errorf("Error opening Playlists bucket: %s\n", err)
-			return err
+			return errors.New("Error opening Playlists bucket.")
 		}
 
 		playlistBucket := root.Bucket([]byte(playlistName))
 		if playlistBucket == nil {
 			glog.Errorf("Error opening %s playlist bucket: %s\n", playlistName, err)
-			return err
+			return errors.New("Error opening playlist bucket.")
 		}
 
 		encoded, err := json.Marshal(file)
@@ -331,7 +331,55 @@ func AddFileToPlaylist(file playlistmgr.PlaylistFile, playlistName string) error
 			return err
 		}
 		playlistBucket.Put([]byte(file.Title), encoded)
-		return nil
+
+		// Update the original file playlists to have a link to the
+		// current playlist.
+		root = tx.Bucket([]byte("Artists"))
+		if root == nil {
+			glog.Errorf("Error opening Artists bucket: %s\n", err)
+			return errors.New("Error opening Artists bucket.")
+		}
+
+		artistBucket := root.Bucket([]byte(file.Artist))
+		if artistBucket == nil {
+			glog.Errorf("Error opening %s artist bucket: %s\n", file.Artist, err)
+			return errors.New("Error opening artist bucket.")
+		}
+
+		albumBucket := artistBucket.Bucket([]byte(file.Album))
+		if albumBucket == nil {
+			glog.Errorf("Error opening %s album on %s artist: %s\n", file.Album, file.Artist, err)
+			return errors.New("Error opening album bucket.")
+		}
+
+		songJson := albumBucket.Get([]byte(file.Title))
+
+		if songJson == nil {
+			glog.Errorf("Error opening %s on %s album on %s artist: %s\n", file.Title, file.Album, file.Artist, err)
+			return errors.New("Error opening song json.")
+		}
+
+		var song SongStore
+		err = json.Unmarshal(songJson, &song)
+		if err != nil {
+			return err
+		}
+
+		if song.Playlists != nil {
+			for _, list := range song.Playlists {
+				if list == playlistName {
+					return nil
+				}
+			}
+		}
+
+		song.Playlists = append(song.Playlists, playlistName)
+		encoded, err = json.Marshal(song)
+		if err != nil {
+			return err
+		}
+
+		return albumBucket.Put([]byte(file.Title), encoded)
 	})
 
 	return err
@@ -350,15 +398,179 @@ func DeletePlaylist(name, mPoint string) error {
 	err = db.Update(func(tx *bolt.Tx) error {
 		root := tx.Bucket([]byte("Playlists"))
 		if root == nil {
-			glog.Errorf("Error opening Playlists bucket: %s\n", err)
-			return err
+			glog.Errorf("Error opening Playlists bucket.\n")
+			return errors.New("Error opening Playlists bucket.")
 		}
-		//TODO: Scan all the files in the playlist and remove the
-		// connections with songs in MuLi.
 
-		err := root.DeleteBucket([]byte(name))
-		return err
+		playlistBucket := root.Bucket([]byte(name))
+		if playlistBucket == nil {
+			return nil
+		}
+
+		c := playlistBucket.Cursor()
+		for k, songJson := c.First(); k != nil; k, songJson = c.Next() {
+			if songJson == nil {
+				continue
+			}
+
+			if songJson == nil {
+				glog.Infof("Error opening song Json: %s in playlist: %s\n", k, name)
+				continue
+			}
+
+			// Get the PlaylistFile
+			var file playlistmgr.PlaylistFile
+			err = json.Unmarshal(songJson, &file)
+			if err != nil {
+				continue
+			}
+
+			// Open the song in the MuLi database
+			// to remove the playlists connection.
+			artistsBucket := tx.Bucket([]byte("Artists"))
+			if artistsBucket == nil {
+				glog.Error("Cannot open Artists bucket.")
+				return errors.New("Cannot open Artists bucket.")
+			}
+
+			artistBucket := artistsBucket.Bucket([]byte(file.Artist))
+			if artistBucket == nil {
+				glog.Infof("Cannot open Artist bucket: %s.\n", file.Artist)
+				continue
+			}
+
+			albumBucket := artistBucket.Bucket([]byte(file.Album))
+			if albumBucket == nil {
+				glog.Infof("Cannot open Album bucket: %s in Artist: %s.\n", file.Album, file.Artist)
+				continue
+			}
+
+			jsonFile := albumBucket.Get([]byte(file.Title))
+			if jsonFile == nil {
+				glog.Infof("Cannot open song: %s Album bucket: %s in Artist: %s.\n", file.Title, file.Album, file.Artist)
+				continue
+			}
+
+			var song SongStore
+			err = json.Unmarshal(jsonFile, &song)
+			if err != nil {
+				return err
+			}
+
+			// Remove the playlist from the song's playlists list
+			if song.Playlists != nil {
+				for i, list := range song.Playlists {
+					if list == name {
+						song.Playlists = append(song.Playlists[:i], song.Playlists[i+1:]...)
+						break
+					}
+				}
+			}
+
+			encoded, err := json.Marshal(song)
+			if err != nil {
+				return err
+			}
+
+			// Store the modified song version
+			return albumBucket.Put([]byte(k), encoded)
+
+		}
+
+		return root.DeleteBucket([]byte(name))
 	})
 
 	return playlistmgr.DeletePlaylist(name, mPoint)
+}
+
+// DeletePlaylistSong function deletes a specific song from a playlist.
+// The force parameter is used to just delete the song without modifying
+// the original song file.
+func DeletePlaylistSong(playlist, name string, force bool) error {
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		root := tx.Bucket([]byte("Playlists"))
+		if root == nil {
+			glog.Errorf("Error opening Playlists bucket.\n")
+			return errors.New("Error opening Playlists bucket.")
+		}
+
+		playlistBucket := root.Bucket([]byte(playlist))
+		if playlistBucket == nil {
+			glog.Infof("Cannot open Playlist bucket: %s\n", playlist)
+			return errors.New("Error opening Playlist bucket.")
+		}
+
+		if force == false {
+			songJson := playlistBucket.Get([]byte(name))
+			if songJson == nil {
+				return nil
+			}
+
+			// Get the playlist file
+			var file playlistmgr.PlaylistFile
+			err = json.Unmarshal(songJson, &file)
+			if err != nil {
+				return nil
+			}
+
+			// Open the song in the MuLi database
+			// to remove the playlists connection.
+			artistsBucket := tx.Bucket([]byte("Artists"))
+			if artistsBucket == nil {
+				glog.Error("Cannot open Artists bucket.")
+				return errors.New("Cannot open Artists bucket.")
+			}
+
+			artistBucket := artistsBucket.Bucket([]byte(file.Artist))
+			if artistBucket == nil {
+				glog.Infof("Cannot open Artist bucket: %s.\n", file.Artist)
+				return nil
+			}
+
+			albumBucket := artistBucket.Bucket([]byte(file.Album))
+			if albumBucket == nil {
+				glog.Infof("Cannot open Album bucket: %s in Artist: %s.\n", file.Album, file.Artist)
+				return nil
+			}
+
+			jsonFile := albumBucket.Get([]byte(file.Title))
+			if jsonFile == nil {
+				glog.Infof("Cannot open song: %s Album bucket: %s in Artist: %s.\n", file.Title, file.Album, file.Artist)
+				return nil
+			}
+
+			var song SongStore
+			err = json.Unmarshal(jsonFile, &song)
+			if err != nil {
+				return err
+			}
+
+			// Remove the playlist from the song's playlists list
+			if song.Playlists != nil {
+				for i, list := range song.Playlists {
+					if list == name {
+						song.Playlists = append(song.Playlists[:i], song.Playlists[i+1:]...)
+						break
+					}
+				}
+			}
+
+			encoded, err := json.Marshal(song)
+			if err != nil {
+				return err
+			}
+
+			// Store the modified song version
+			return albumBucket.Put([]byte(name), encoded)
+		}
+
+		return playlistBucket.Delete([]byte(name))
+	})
+	return err
 }

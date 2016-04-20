@@ -57,7 +57,7 @@ func MoveSongs(oldArtist, oldAlbum, oldName, newArtist, newAlbum, newName, path,
 		return err
 	}
 
-	err = DeleteSong(oldArtist, oldAlbum, oldName)
+	err = DeleteSong(oldArtist, oldAlbum, oldName, mPoint)
 	if err != nil {
 		glog.Infof("Cannot delete song: %s\n", err)
 		return err

@@ -468,7 +468,15 @@ func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 		}
 
 		if len(d.artist) < 1 {
-			err := store.DeleteArtist(name)
+			if name == "drop" {
+				return fuse.EIO
+			}
+
+			if name == "playlists" {
+				return fuse.EIO
+			}
+
+			err := store.DeleteArtist(name, d.mPoint)
 			if err != nil {
 				return fuse.EIO
 			}
@@ -481,7 +489,7 @@ func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 			return nil
 		}
 
-		err := store.DeleteAlbum(d.artist, name)
+		err := store.DeleteAlbum(d.artist, name, d.mPoint)
 		if err != nil {
 			return fuse.EIO
 		}
@@ -497,7 +505,14 @@ func (d *Dir) Remove(ctx context.Context, req *fuse.RemoveRequest) error {
 			return fuse.EIO
 		}
 
-		err = store.DeleteSong(d.artist, d.album, name)
+		if d.artist == "playlists" {
+			err := store.DeletePlaylistSong(d.album, name, false)
+			if err != nil {
+				return fuse.EIO
+			}
+		}
+
+		err = store.DeleteSong(d.artist, d.album, name, d.mPoint)
 		if err != nil {
 			return fuse.EIO
 		}

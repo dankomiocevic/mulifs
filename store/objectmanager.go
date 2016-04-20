@@ -63,6 +63,7 @@ type SongStore struct {
 	SongName     string
 	SongPath     string
 	SongFullPath string
+	Playlists    []string
 }
 
 // InitDB initializes the database with the
@@ -681,7 +682,7 @@ func CreateSong(artist string, album string, nameRaw string, path string) (strin
 
 // DeleteArtist deletes the specified Artist only
 // in the database and returns nil if there was no error.
-func DeleteArtist(artist string) error {
+func DeleteArtist(artist, mPoint string) error {
 	glog.Infof("Deleting Artist: %s\n", artist)
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
@@ -689,6 +690,7 @@ func DeleteArtist(artist string) error {
 	}
 	defer db.Close()
 
+	var songList []SongStore
 	err = db.Update(func(tx *bolt.Tx) error {
 		root := tx.Bucket([]byte("Artists"))
 		buck := root.Bucket([]byte(artist))
@@ -700,11 +702,11 @@ func DeleteArtist(artist string) error {
 			}
 			album := buck.Bucket([]byte(artist))
 			d := album.Cursor()
-			for i, _ := d.First(); i != nil; i, _ = d.Next() {
-				if i[0] == '.' {
+			for name, _ := d.First(); name != nil; name, _ = d.Next() {
+				if name[0] == '.' {
 					continue
 				}
-				songJson := album.Get([]byte(i))
+				songJson := album.Get([]byte(name))
 				if songJson == nil {
 					continue
 				}
@@ -714,25 +716,41 @@ func DeleteArtist(artist string) error {
 				if err != nil {
 					continue
 				}
-				os.Remove(song.SongFullPath)
+				song.SongName = string(name)
+				songList = append(songList, song)
 			}
 		}
 		root.DeleteBucket([]byte(artist))
 		return nil
 	})
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	for _, v := range songList {
+		if v.Playlists != nil {
+			for _, list := range v.Playlists {
+				DeletePlaylistSong(list, v.SongName, true)
+				RegeneratePlaylistFile(list, mPoint)
+			}
+		}
+		os.Remove(v.SongFullPath)
+	}
+	return nil
 }
 
 // DeleteAlbum deletes the specified Album for
 // the specified Artist only in the database and
 // returns nil if there was no error.
-func DeleteAlbum(artistName string, albumName string) error {
+func DeleteAlbum(artistName, albumName, mPoint string) error {
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
+	var songList []SongStore
 	err = db.Update(func(tx *bolt.Tx) error {
 		root := tx.Bucket([]byte("Artists"))
 		artistBucket := root.Bucket([]byte(artistName))
@@ -745,11 +763,11 @@ func DeleteAlbum(artistName string, albumName string) error {
 			return nil
 		}
 		d := album.Cursor()
-		for i, _ := d.First(); i != nil; i, _ = d.Next() {
-			if i[0] == '.' {
+		for name, _ := d.First(); name != nil; name, _ = d.Next() {
+			if name[0] == '.' {
 				continue
 			}
-			songJson := album.Get([]byte(i))
+			songJson := album.Get([]byte(name))
 			if songJson == nil {
 				continue
 			}
@@ -759,18 +777,33 @@ func DeleteAlbum(artistName string, albumName string) error {
 			if err != nil {
 				continue
 			}
-			os.Remove(song.SongFullPath)
+			song.SongName = string(name)
+			songList = append(songList, song)
 		}
 		artistBucket.DeleteBucket([]byte(albumName))
 		return nil
 	})
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	for _, v := range songList {
+		if v.Playlists != nil {
+			for _, list := range v.Playlists {
+				DeletePlaylistSong(list, v.SongName, true)
+				RegeneratePlaylistFile(list, mPoint)
+			}
+		}
+		os.Remove(v.SongFullPath)
+	}
+	return nil
 }
 
 // DeleteSong deletes the specified Song in the
 // specified Album and Artist only in the database
 // and returns nil if there was no error.
-func DeleteSong(artist string, album string, song string) error {
+func DeleteSong(artist, album, song, mPoint string) error {
 	glog.Infof("Deleting song: %s with Artist: %s and Album: %s\n", song, artist, album)
 	if song[0] == '.' {
 		return nil
@@ -782,6 +815,7 @@ func DeleteSong(artist string, album string, song string) error {
 	}
 	defer db.Close()
 
+	var songData SongStore
 	err = db.Update(func(tx *bolt.Tx) error {
 		root := tx.Bucket([]byte("Artists"))
 		artistBucket := root.Bucket([]byte(artist))
@@ -796,14 +830,23 @@ func DeleteSong(artist string, album string, song string) error {
 
 		songJson := albumBucket.Get([]byte(song))
 		if songJson != nil {
-			var songData SongStore
 			err := json.Unmarshal(songJson, &songData)
 			if err != nil {
 				os.Remove(songData.SongFullPath)
 			}
 		}
-		albumBucket.Delete([]byte(song))
-		return nil
+		return albumBucket.Delete([]byte(song))
 	})
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	if songData.Playlists != nil {
+		for _, list := range songData.Playlists {
+			DeletePlaylistSong(list, song, true)
+			RegeneratePlaylistFile(list, mPoint)
+		}
+	}
+	return nil
 }
