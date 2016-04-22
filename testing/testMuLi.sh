@@ -148,7 +148,7 @@ function copy_artists {
 function check_copied_artists {
   cd $PWD_DIR
   cd $DST_DIR
-  echo "Checking copied Artists"
+  echo "Checking copied Artists."
 
   local ARTIST_COUNT=$TEST_SIZE
   while [ $ARTIST_COUNT -gt 0 ]; do
@@ -177,14 +177,74 @@ function check_copied_artists {
           done
           cd ..
         else 
-          echo "ERROR: Directory ${DST_DIR}/GreatArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT} not exists"
+          echo "ERROR: Directory ${DST_DIR}/OtherArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT} not exists"
         fi
         let ALBUM_COUNT=ALBUM_COUNT-1
       done
     else
-      echo "ERROR: Directory ${DST_DIR}/GreatArtist${ARTIST_COUNT} not exists"
+      echo "ERROR: Directory ${DST_DIR}/OtherArtist${ARTIST_COUNT} not exists"
     fi
     let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+}
+
+# Copy albums around
+function copy_albums {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo "Copying Albums around."
+  if [ ! -d "GreatArtist1" ]; then
+    echo "ERROR: Cannot find GreatArtist1"
+    return
+  fi
+
+  cd GreatArtist1
+
+  local ALBUM_COUNT=$TEST_SIZE
+  while [ $ALBUM_COUNT -gt 0 ] ; do 
+    if [ -d "GreatAlbum$ALBUM_COUNT" ]; then
+      cp -r "GreatAlbum$ALBUM_COUNT" "OtherAlbum$ALBUM_COUNT" &> /dev/null
+    fi
+    let ALBUM_COUNT=ALBUM_COUNT-1
+  done
+}
+
+# Check copied albums
+function check_copied_albums {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo "Checking copied Albums"
+  if [ ! -d "GreatArtist1" ]; then
+    echo "ERROR: Cannot find GreatArtist1"
+    return
+  fi
+  cd GreatArtist1
+
+  local ALBUM_COUNT=$TEST_SIZE
+  while [ $ALBUM_COUNT -gt 0 ]; do
+    if [ -d "OtherAlbum$ALBUM_COUNT" ]; then
+      cd "OtherAlbum$ALBUM_COUNT"
+      local SONG_COUNT=$TEST_SIZE
+      while [ $SONG_COUNT -gt 0 ]; do
+        if [ -f "Song${SONG_COUNT}.mp3" ]; then
+          if [ ! -s "Song${SONG_COUNT}.mp3" ]; then
+            echo "ERROR: File ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT}/Song${SONG_COUNT} has 0 size"
+          else
+            check_tags Song${SONG_COUNT}.mp3 GreatArtist1 OtherAlbum$ALBUM_COUNT Song${SONG_COUNT}
+            if [ $? -ne 0 ] ; then
+              echo "ERROR: File ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT}/Song${SONG_COUNT} tags not match"
+            fi
+          fi
+        else
+          echo "ERROR: File ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT}/Song${SONG_COUNT} not exists"
+        fi
+        let SONG_COUNT=SONG_COUNT-1
+      done
+      cd ..
+    else 
+      echo "ERROR: Directory ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT} not exists"
+    fi
+    let ALBUM_COUNT=ALBUM_COUNT-1
   done
 }
 
@@ -245,6 +305,8 @@ mount_muli
 check_fake
 copy_artists
 check_copied_artists
+copy_albums
+check_copied_albums
 umount_muli
 clean_up
 
