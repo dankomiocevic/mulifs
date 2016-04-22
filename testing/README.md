@@ -25,6 +25,8 @@ The script will test the following:
 
 - Create lots of mp3 files and add different Tags in order to force MuLi to create the directory structure. 
 - Check the .description files. (WIP)
+- Test with a file with special characters in the Tags. (WIP)
+- Test with a file with empty Tags. (WIP)
 - Test the Copy command (Artists, Albums and songs). (WIP)
 - Test the Rename command (Artists, Albums and songs). (WIP)
 - Test the Delete command (Artists, Albums and songs). (WIP)
