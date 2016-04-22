@@ -35,7 +35,7 @@ TEST_SIZE=2
 # tag editor command.
 # Returns the id3 command return value.
 function set_tags {
-  id3tag --artist=$2 --album=$3 --song=$4 $1 > /dev/null
+  id3tag --artist=$2 --album=$3 --song=$4 $1 &> /dev/null
   return $?
 }
 
@@ -53,15 +53,15 @@ function check_tags {
   local ARTIST=$(id3info $1 | grep TPE1)
   local ALBUM=$(id3info $1 | grep TALB)
   local TITLE=$(id3info $1 | grep TIT2)
-  if [ ${ARTIST#*:} -ne $2 ]; then
+  if [ ${ARTIST#*:} != $2 ]; then
     return 1
   fi
 
-  if [ ${ALBUM#*:} -ne $3 ]; then
+  if [ ${ALBUM#*:} != $3 ]; then
     return 2
   fi
 
-  if [ ${TITLE#*:} -ne $4 ]; then
+  if [ ${TITLE#*:} != $4 ]; then
     return 3
   fi
   return 0
@@ -79,7 +79,7 @@ function create_fake {
     while [ $ALBUM_COUNT -gt 0 ]; do
       local SONG_COUNT=$TEST_SIZE
       while [ $SONG_COUNT -gt 0 ]; do
-        cp "test.mp3" "$SRC_DIR/testAr${ARTIST_COUNT}Al${ALBUM_COUNT}Sn${SONG_COUNT}.mp3"
+        cp "test.mp3" "$SRC_DIR/testAr${ARTIST_COUNT}Al${ALBUM_COUNT}Sn${SONG_COUNT}.mp3" &> /dev/null
         set_tags "$SRC_DIR/testAr${ARTIST_COUNT}Al${ALBUM_COUNT}Sn${SONG_COUNT}.mp3" "GreatArtist$ARTIST_COUNT" "GreatAlbum$ALBUM_COUNT" "Song$SONG_COUNT"
         if [ $? -ne 0 ]; then
           echo "ERROR in file $SRC_DIR/testAr${ARTIST_COUNT}Al${ALBUM_COUNT}Sn${SONG_COUNT}.mp3"
@@ -128,7 +128,64 @@ function check_fake {
     fi
     let ARTIST_COUNT=ARTIST_COUNT-1
   done
-  
+}
+
+# Copy artists around
+function copy_artists {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo "Copying Artists around."
+  local ARTIST_COUNT=$TEST_SIZE
+  while [ $ARTIST_COUNT -gt 0 ] ; do 
+    if [ -d "GreatArtist$ARTIST_COUNT" ]; then
+      cp -r "GreatArtist$ARTIST_COUNT" "OtherArtist$ARTIST_COUNT" &> /dev/null
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+}
+
+# Check copied artists
+function check_copied_artists {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo "Checking copied Artists"
+
+  local ARTIST_COUNT=$TEST_SIZE
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    cd $PWD_DIR
+    if [ -d "$DST_DIR/OtherArtist$ARTIST_COUNT" ]; then
+      cd "$DST_DIR/OtherArtist$ARTIST_COUNT"
+      local ALBUM_COUNT=$TEST_SIZE
+      while [ $ALBUM_COUNT -gt 0 ]; do
+        if [ -d "GreatAlbum$ALBUM_COUNT" ]; then
+          cd "GreatAlbum$ALBUM_COUNT"
+          local SONG_COUNT=$TEST_SIZE
+          while [ $SONG_COUNT -gt 0 ]; do
+            if [ -f "Song${SONG_COUNT}.mp3" ]; then
+              if [ ! -s "Song${SONG_COUNT}.mp3" ]; then
+                echo "ERROR: File ${DST_DIR}/OtherArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT} has 0 size"
+              else
+                check_tags Song${SONG_COUNT}.mp3 OtherArtist$ARTIST_COUNT GreatAlbum$ALBUM_COUNT Song${SONG_COUNT}
+                if [ $? -ne 0 ] ; then
+                  echo "ERROR: File ${DST_DIR}/OtherArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT} tags not match"
+                fi
+              fi
+            else
+              echo "ERROR: File ${DST_DIR}/OtherArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT} not exists"
+            fi
+            let SONG_COUNT=SONG_COUNT-1
+          done
+          cd ..
+        else 
+          echo "ERROR: Directory ${DST_DIR}/GreatArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT} not exists"
+        fi
+        let ALBUM_COUNT=ALBUM_COUNT-1
+      done
+    else
+      echo "ERROR: Directory ${DST_DIR}/GreatArtist${ARTIST_COUNT} not exists"
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
 }
 
 # Pre-Mount function
@@ -148,7 +205,7 @@ function mount_muli {
   cd $PWD_DIR
   echo -n "Mounting MuLi filesystem..."
   # Run MuLi in the background
-  $MULI_X $SRC_DIR $DST_DIR &
+  $MULI_X $SRC_DIR $DST_DIR &> muli.log &
   while [ ! -d "$DST_DIR/drop" ]; do
     sleep 1
   done
@@ -186,6 +243,8 @@ create_dirs
 create_fake
 mount_muli
 check_fake
+copy_artists
+check_copied_artists
 umount_muli
 clean_up
 
