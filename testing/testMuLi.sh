@@ -176,7 +176,7 @@ function copy_artists {
   echo "OK!"
 }
 
-# Check copied artists
+# Check copied Artists
 function check_copied_artists {
   cd $PWD_DIR
   cd $DST_DIR
@@ -230,6 +230,48 @@ function check_copied_artists {
         fi
         let ALBUM_COUNT=ALBUM_COUNT-1
       done
+    else
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: Directory ${DST_DIR}/OtherArtist${ARTIST_COUNT} not exists"
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
+# Delete copied artists
+function delete_artists {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo -n "Deleting copied Artists..."
+
+  local ARTIST_COUNT=$TEST_SIZE
+  local HAS_ERROR=0
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    cd $PWD_DIR
+    if [ -d "$DST_DIR/OtherArtist$ARTIST_COUNT" ]; then
+      rm -rf "$DST_DIR/OtherArtist$ARTIST_COUNT" ?> /dev/null
+      if [ $? -eq 0 ] ; then
+        if [ -d "$DST_DIR/OtherArtist$ARTIST_COUNT" ]; then
+          if [ $HAS_ERROR -eq 0 ] ; then
+            echo "ERROR"
+          fi
+          HAS_ERROR=1
+          echo "ERROR: Directory ${DST_DIR}/OtherArtist${ARTIST_COUNT} has not been deleted."
+        fi 
+      else
+        if [ $HAS_ERROR -eq 0 ] ; then
+          echo "ERROR"
+        fi
+        HAS_ERROR=1
+        echo "ERROR: Directory ${DST_DIR}/OtherArtist${ARTIST_COUNT} cannot be deleted."
+      fi
     else
       if [ $HAS_ERROR -eq 0 ] ; then
         echo "ERROR"
@@ -618,6 +660,7 @@ copy_songs
 check_copied_songs
 delete_songs
 delete_albums
+delete_artists
 umount_muli
 clean_up
 
