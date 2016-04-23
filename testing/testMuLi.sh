@@ -340,6 +340,59 @@ function check_copied_albums {
   fi
 }
 
+# Delete copied albums
+function delete_albums {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo -n "Deleting copied Albums..."
+  local HAS_ERROR=0
+  if [ ! -d "GreatArtist1" ]; then
+    if [ $HAS_ERROR -eq 0 ] ; then
+      echo "ERROR"
+    fi
+    HAS_ERROR=1
+    echo "ERROR: Cannot find GreatArtist1"
+    return
+  fi
+  cd GreatArtist1
+
+  local ALBUM_COUNT=$TEST_SIZE
+  while [ $ALBUM_COUNT -gt 0 ]; do
+    if [ -d "OtherAlbum$ALBUM_COUNT" ]; then
+      cd "OtherAlbum$ALBUM_COUNT"
+
+      rm -rf "OtherAlbum$ALBUM_COUNT" ?> /dev/null
+      if [ $? -eq 0 ] ; then
+        if [ -d "OtherAlbum$ALBUM_COUNT" ]; then
+          if [ $HAS_ERROR -eq 0 ] ; then
+            echo "ERROR"
+          fi
+          HAS_ERROR=1
+          echo "ERROR: Directory ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT} has not been deleted."
+        fi
+      else
+        if [ $HAS_ERROR -eq 0 ] ; then
+          echo "ERROR"
+        fi
+        HAS_ERROR=1
+        echo "ERROR: Directory ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT} cannot be deleted."
+      fi
+      cd ..
+    else 
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: Directory ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT} not exists"
+    fi
+    let ALBUM_COUNT=ALBUM_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
 # Copy songs around
 function copy_songs {
   cd $PWD_DIR
@@ -441,6 +494,67 @@ function check_copied_songs {
   fi
 }
 
+# Delete songs
+function delete_songs {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo -n "Deleting copied Songs..."
+  local HAS_ERROR=0
+  if [ ! -d "GreatArtist1" ]; then
+    if [ $HAS_ERROR -eq 0 ] ; then
+      echo "ERROR"
+    fi
+    HAS_ERROR=1
+    echo "ERROR: Cannot find GreatArtist1"
+    return
+  fi
+  cd GreatArtist1
+
+  if [ ! -d "GreatAlbum1" ]; then
+    if [ $HAS_ERROR -eq 0 ] ; then
+      echo "ERROR"
+    fi
+    HAS_ERROR=1
+    echo "ERROR: Cannot find GreatAlbum1"
+    return
+  fi
+  cd GreatAlbum1
+
+  local SONG_COUNT=$TEST_SIZE
+
+  while [ $SONG_COUNT -gt 0 ]; do
+    if [ -f "OtherSong${SONG_COUNT}.mp3" ]; then
+      rm -f OtherSong${SONG_COUNT}.mp3 ?> /dev/null
+      if [ $? -ne 0 ] ; then
+        if [ $HAS_ERROR -eq 0 ] ; then
+          echo "ERROR"
+        fi
+        HAS_ERROR=1
+        echo "ERROR: File ${DST_DIR}/GreatArtist1/GreatAlbum1/OtherSong${SONG_COUNT}.mp3 cannot be deleted."
+      else
+        if [ -f "OtherSong${SONG_COUNT}.mp3" ]; then
+          if [ $HAS_ERROR -eq 0 ] ; then
+            echo "ERROR"
+          fi
+          HAS_ERROR=1
+          echo "ERROR: File ${DST_DIR}/GreatArtist1/GreatAlbum1/OtherSong${SONG_COUNT}.mp3 has not been deleted."
+        fi
+      fi
+    else
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: File ${DST_DIR}/GreatArtist1/GreatAlbum1/OtherSong${SONG_COUNT}.mp3 not exists"
+    fi
+    let SONG_COUNT=SONG_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
 # Pre-Mount function
 function create_dirs {
   cd $PWD_DIR
@@ -502,6 +616,8 @@ copy_albums
 check_copied_albums
 copy_songs
 check_copied_songs
+delete_songs
+delete_albums
 umount_muli
 clean_up
 
