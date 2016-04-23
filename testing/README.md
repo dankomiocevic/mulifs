@@ -26,10 +26,10 @@ The script will test the following:
 - Create lots of mp3 files and add different Tags in order to force MuLi to create the directory structure. 
 - Check the .description files. (WIP)
 - Test with a file with special characters in the Tags. (WIP)
-- Test with a file with empty Tags. (WIP)
-- Test the Copy command (Artists, Albums and songs). (WIP)
+- Test with a file with empty Tags.
+- Test the Copy command (Artists, Albums and songs).
 - Test the Rename command (Artists, Albums and songs). (WIP)
-- Test the Delete command (Artists, Albums and songs). (WIP)
+- Test the Delete command (Artists, Albums and songs).
 - Test the MkDir comand (Artists, Albums and songs). (WIP)
 - Test the Drop directory (throw new files and existing files). (WIP)
 - Test the Playlist Rename command (Artists, Albums and songs). (WIP)
@@ -45,4 +45,4 @@ The requirements to make this tool work are the following:
 - Have a MuLiFS compiled binary.
 - Have a ID3Tag tool installed.
 
-I am using MAC default id3 tool and the script works with that, if you are using a different one, there are two funcions in the script (set_tags and check_tags) that need to be modified in order to use the new tool.
+I am using MAC default id3 tool and the script works with that, if you are using a different one, there are three funcions in the script (strip_tags, set_tags and check_tags) that need to be modified in order to use the new tool.

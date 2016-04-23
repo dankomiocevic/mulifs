@@ -39,6 +39,14 @@ function set_tags {
   return $?
 }
 
+# Tag stripping function
+# This function should strip all the tags from the MP3 file.
+# The fist argument is the file.
+function strip_tags {
+  id3convert -s $1 &> /dev/null
+  return $?
+}
+
 # Tag checking function
 # This function is used to check that the tags are correct
 # in a specific MP3 file.
@@ -65,6 +73,64 @@ function check_tags {
     return 3
   fi
   return 0
+}
+
+# Create empty MP3 function
+function create_empty {
+  cd $PWD_DIR
+  echo -n "Creating empty MP3 files..."
+  local HAS_ERROR=0
+
+  cp test.mp3 $SRC_DIR/empty.mp3 &> /dev/null
+  strip_tags $SRC_DIR/empty.mp3
+  #TODO: Maybe test here what happens if we only add some tags
+  #       like Artist or Album only.
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
+# Check that empty MP3 exists function
+function check_empty {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo -n "Creating empty MP3 files..."
+  local HAS_ERROR=0
+
+  if [ ! -d "unknown" ] ; then
+    echo "ERROR"
+    echo "The unknown Artist directory does not exist."
+    return 1
+  fi
+  cd unknown
+
+  if [ ! -d "unknown" ] ; then
+    echo "ERROR"
+    echo "The unknown Album directory does not exist."
+    return 2
+  fi
+  cd unknown
+
+  if [ -f "empty.mp3" ] ; then
+    check_tags empty.mp3 unknown unknown empty
+    if [ $? -ne 0 ] ; then
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: File unknown/unknown/empty.mp3 tags not match"
+    fi
+  else
+    if [ $HAS_ERROR -eq 0 ] ; then
+      echo "ERROR"
+    fi
+    HAS_ERROR=1
+    echo "The empty.mp3 file cannot be found."
+  fi
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
 }
 
 # Create fake MP3s function
@@ -256,7 +322,7 @@ function delete_artists {
   while [ $ARTIST_COUNT -gt 0 ]; do
     cd $PWD_DIR
     if [ -d "$DST_DIR/OtherArtist$ARTIST_COUNT" ]; then
-      rm -rf "$DST_DIR/OtherArtist$ARTIST_COUNT" ?> /dev/null
+      rm -rf "$DST_DIR/OtherArtist$ARTIST_COUNT" &> /dev/null
       if [ $? -eq 0 ] ; then
         if [ -d "$DST_DIR/OtherArtist$ARTIST_COUNT" ]; then
           if [ $HAS_ERROR -eq 0 ] ; then
@@ -403,7 +469,7 @@ function delete_albums {
     if [ -d "OtherAlbum$ALBUM_COUNT" ]; then
       cd "OtherAlbum$ALBUM_COUNT"
 
-      rm -rf "OtherAlbum$ALBUM_COUNT" ?> /dev/null
+      rm -rf "OtherAlbum$ALBUM_COUNT" &> /dev/null
       if [ $? -eq 0 ] ; then
         if [ -d "OtherAlbum$ALBUM_COUNT" ]; then
           if [ $HAS_ERROR -eq 0 ] ; then
@@ -566,7 +632,7 @@ function delete_songs {
 
   while [ $SONG_COUNT -gt 0 ]; do
     if [ -f "OtherSong${SONG_COUNT}.mp3" ]; then
-      rm -f OtherSong${SONG_COUNT}.mp3 ?> /dev/null
+      rm -f OtherSong${SONG_COUNT}.mp3 &> /dev/null
       if [ $? -ne 0 ] ; then
         if [ $HAS_ERROR -eq 0 ] ; then
           echo "ERROR"
@@ -601,7 +667,7 @@ function delete_songs {
 function create_dirs {
   cd $PWD_DIR
   echo -n "Creating dirs..."
-  mkdir $SRC_DIR $DST_DIR
+  mkdir $SRC_DIR $DST_DIR &> /dev/null
   if [ $? -eq 0 ] ; then
       echo "OK!"
   else
@@ -650,8 +716,10 @@ function clean_up {
 # Perform tests
 create_dirs
 create_fake
+create_empty
 mount_muli
 check_fake
+check_empty
 copy_artists
 check_copied_artists
 copy_albums
