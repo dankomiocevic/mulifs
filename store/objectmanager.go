@@ -700,7 +700,10 @@ func DeleteArtist(artist, mPoint string) error {
 			if k[0] == '.' {
 				continue
 			}
-			album := buck.Bucket([]byte(artist))
+			album := buck.Bucket([]byte(k))
+			if album == nil {
+				continue
+			}
 			d := album.Cursor()
 			for name, _ := d.First(); name != nil; name, _ = d.Next() {
 				if name[0] == '.' {
