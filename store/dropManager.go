@@ -86,7 +86,7 @@ func GetDropFilePath(name, mPoint string) (string, error) {
 		rootPoint = rootPoint + "/"
 	}
 
-	path := mPoint + "drop/" + name
+	path := rootPoint + "drop/" + name
 	glog.Infof("Getting drop file path for: %s\n", path)
 	// Check if the file exists
 	src, err := os.Stat(path)
