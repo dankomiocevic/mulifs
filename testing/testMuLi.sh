@@ -284,6 +284,124 @@ function check_fake {
   fi
 }
 
+# function to create directories and fill them with empty files
+function mkdirs {
+  cd $PWD_DIR
+  echo -n "Creating dirs..."
+  local ARTIST_COUNT=$TEST_SIZE
+  local HAS_ERROR=0
+
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    cd $PWD_DIR
+    mkdir "$DST_DIR/NewArtist$ARTIST_COUNT" &> /dev/null
+    if [ $? -eq 0 ]; then
+      cd "$DST_DIR/NewArtist$ARTIST_COUNT"
+      local ALBUM_COUNT=$TEST_SIZE
+      while [ $ALBUM_COUNT -gt 0 ]; do
+        mkdir "NewAlbum$ALBUM_COUNT" &> /dev/null
+        if [ $? -eq 0 ]; then
+          cd "NewAlbum$ALBUM_COUNT"
+          local SONG_COUNT=$TEST_SIZE
+          while [ $SONG_COUNT -gt 0 ]; do
+            cp $PWD_DIR/test.mp3 NewSong${SONG_COUNT}.mp3 &> /dev/null
+            strip_tags NewSong${SONG_COUNT}.mp3 
+            let SONG_COUNT=SONG_COUNT-1
+          done
+          cd ..
+        else 
+          if [ $HAS_ERROR -eq 0 ] ; then
+            echo "ERROR"
+          fi
+          HAS_ERROR=1
+          echo "ERROR: Directory ${DST_DIR}/NewArtist${ARTIST_COUNT}/NewAlbum${ALBUM_COUNT} cannot be created"
+        fi
+        let ALBUM_COUNT=ALBUM_COUNT-1
+      done
+    else
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: Directory ${DST_DIR}/NewArtist${ARTIST_COUNT} cannot be created"
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
+
+
+# Check that all the created files are in the right place.
+function check_mkdirs {
+  cd $PWD_DIR
+  echo -n "Checking the created files..."
+  local ARTIST_COUNT=$TEST_SIZE
+  local HAS_ERROR=0
+
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    cd $PWD_DIR
+    if [ -d "$DST_DIR/NewArtist$ARTIST_COUNT" ]; then
+      cd "$DST_DIR/NewArtist$ARTIST_COUNT"
+      local ALBUM_COUNT=$TEST_SIZE
+      while [ $ALBUM_COUNT -gt 0 ]; do
+        if [ -d "NewAlbum$ALBUM_COUNT" ]; then
+          cd "NewAlbum$ALBUM_COUNT"
+          local SONG_COUNT=$TEST_SIZE
+          while [ $SONG_COUNT -gt 0 ]; do
+            if [ -f "NewSong${SONG_COUNT}.mp3" ]; then
+              if [ ! -s "NewSong${SONG_COUNT}.mp3" ]; then
+                if [ $HAS_ERROR -eq 0 ] ; then
+                  echo "ERROR"
+                fi
+                HAS_ERROR=1
+                echo "ERROR: File ${DST_DIR}/NewArtist${ARTIST_COUNT}/NewAlbum${ALBUM_COUNT}/NewSong${SONG_COUNT}.mp3 has 0 size"
+              else
+                check_tags NewSong${SONG_COUNT}.mp3 NewArtist${ARTIST_COUNT} NewAlbum${ALBUM_COUNT} NewSong${SONG_COUNT}
+                if [ $? -ne 0 ] ; then
+                  if [ $HAS_ERROR -eq 0 ] ; then
+                    echo "ERROR"
+                  fi
+                  HAS_ERROR=1
+                  echo "ERROR: File ${DST_DIR}/NewArtist${ARTIST_COUNT}/NewAlbum${ALBUM_COUNT}/NewSong${SONG_COUNT}.mp3 tags are wrong."
+                fi
+              fi
+            else
+              if [ $HAS_ERROR -eq 0 ] ; then
+                echo "ERROR"
+              fi
+              HAS_ERROR=1
+              echo "ERROR: File ${DST_DIR}/NewArtist${ARTIST_COUNT}/NewAlbum${ALBUM_COUNT}/NewSong${SONG_COUNT}.mp3 not exists"
+            fi
+            let SONG_COUNT=SONG_COUNT-1
+          done
+          cd ..
+        else 
+          if [ $HAS_ERROR -eq 0 ] ; then
+            echo "ERROR"
+          fi
+          HAS_ERROR=1
+          echo "ERROR: Directory ${DST_DIR}/NewArtist${ARTIST_COUNT}/NewAlbum${ALBUM_COUNT} not exists"
+        fi
+        let ALBUM_COUNT=ALBUM_COUNT-1
+      done
+    else
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: Directory ${DST_DIR}/NewArtist${ARTIST_COUNT} not exists"
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
 # Move artists 
 function move_artists {
   cd $PWD_DIR
@@ -1078,6 +1196,8 @@ move_albums
 check_moved_albums
 move_songs
 check_moved_songs
+mkdirs
+check_mkdirs
 umount_muli
 clean_up
 
