@@ -82,7 +82,9 @@ func cleanLists() {
 	for i := len(fileItems) - 1; i >= 0; i-- {
 		item := fileItems[i]
 		if item.Touched.Before(timeout) {
-			item.Fn(item.FileObject)
+			if item.Fn != nil {
+				item.Fn(item.FileObject)
+			}
 			fileItems = append(fileItems[:i], fileItems[i+1:]...)
 		}
 	}
