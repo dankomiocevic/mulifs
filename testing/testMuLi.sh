@@ -35,7 +35,7 @@ TEST_SIZE=2
 # tag editor command.
 # Returns the id3 command return value.
 function set_tags {
-  id3tag --artist=$2 --album=$3 --song=$4 $1 &> /dev/null
+  id3tag --artist="$2" --album="$3" --song="$4" $1 &> /dev/null
   return $?
 }
 
@@ -94,7 +94,7 @@ function create_empty {
 function check_empty {
   cd $PWD_DIR
   cd $DST_DIR
-  echo -n "Creating empty MP3 files..."
+  echo -n "Checking empty MP3 files..."
   local HAS_ERROR=0
 
   if [ ! -d "unknown" ] ; then
@@ -126,6 +126,65 @@ function check_empty {
     fi
     HAS_ERROR=1
     echo "The empty.mp3 file cannot be found."
+  fi
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
+# Create MP3 with special characters function
+function create_special {
+  cd $PWD_DIR
+  echo -n "Creating special MP3 files..."
+  local HAS_ERROR=0
+
+  cp test.mp3 $SRC_DIR/special.mp3 &> /dev/null
+  set_tags $SRC_DIR/special.mp3 'Increíble Artista' 'Suco de Aça' 'Canció'
+  #TODO: Maybe test here what happens if we only add some tags
+  #       like Artist or Album only.
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
+# Check that MP3 with special characters
+# exists function
+function check_special {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo -n "Checking special MP3 files..."
+  local HAS_ERROR=0
+
+  if [ ! -d "Increible_Artista" ] ; then
+    echo "ERROR"
+    echo "The special Artist directory does not exist."
+    return 1
+  fi
+  cd Increible_Artista 
+
+  if [ ! -d "Suco_de_Acai" ] ; then
+    echo "ERROR"
+    echo "The special Album directory does not exist."
+    return 2
+  fi
+  cd Suco_de_Acai 
+
+  if [ -f "Cancion.mp3" ] ; then
+    check_tags $SRC_DIR/special.mp3 "Increíble Artista!" "Suco de Açaí" "Canción"
+    if [ $? -ne 0 ] ; then
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: File Increible_Artista/Suco_de_Acai/Cancion.mp3 tags not match"
+    fi
+  else
+    if [ $HAS_ERROR -eq 0 ] ; then
+      echo "ERROR"
+    fi
+    HAS_ERROR=1
+    echo "The Cancion.mp3 file cannot be found."
   fi
 
   if [ $HAS_ERROR -eq 0 ] ; then
@@ -216,6 +275,92 @@ function check_fake {
       fi
       HAS_ERROR=1
       echo "ERROR: Directory ${DST_DIR}/GreatArtist${ARTIST_COUNT} not exists"
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
+# Move artists 
+function move_artists {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo -n "Moving Artists..."
+  local ARTIST_COUNT=$TEST_SIZE
+
+  while [ $ARTIST_COUNT -gt 0 ] ; do 
+    if [ -d "GreatArtist$ARTIST_COUNT" ]; then
+      mv "GreatArtist$ARTIST_COUNT" "DifferentArtist$ARTIST_COUNT" &> /dev/null
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  echo "OK!"
+}
+
+# Check moved Artists
+function check_moved_artists {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo -n "Checking moved Artists..."
+
+  local ARTIST_COUNT=$TEST_SIZE
+  local HAS_ERROR=0
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    cd $PWD_DIR
+    if [ -d "$DST_DIR/DifferentArtist$ARTIST_COUNT" ]; then
+      cd "$DST_DIR/DifferentArtist$ARTIST_COUNT"
+      local ALBUM_COUNT=$TEST_SIZE
+      while [ $ALBUM_COUNT -gt 0 ]; do
+        if [ -d "GreatAlbum$ALBUM_COUNT" ]; then
+          cd "GreatAlbum$ALBUM_COUNT"
+          local SONG_COUNT=$TEST_SIZE
+          while [ $SONG_COUNT -gt 0 ]; do
+            if [ -f "Song${SONG_COUNT}.mp3" ]; then
+              if [ ! -s "Song${SONG_COUNT}.mp3" ]; then
+                if [ $HAS_ERROR -eq 0 ] ; then
+                  echo "ERROR"
+                fi
+                HAS_ERROR=1
+                echo "ERROR: File ${DST_DIR}/DifferentArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 has 0 size"
+              else
+                check_tags Song${SONG_COUNT}.mp3 DifferentArtist$ARTIST_COUNT GreatAlbum$ALBUM_COUNT Song${SONG_COUNT}
+                if [ $? -ne 0 ] ; then
+                  if [ $HAS_ERROR -eq 0 ] ; then
+                    echo "ERROR"
+                  fi
+                  HAS_ERROR=1
+                  echo "ERROR: File ${DST_DIR}/DifferentArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 tags not match"
+                fi
+              fi
+            else
+              if [ $HAS_ERROR -eq 0 ] ; then
+                echo "ERROR"
+              fi
+              HAS_ERROR=1
+              echo "ERROR: File ${DST_DIR}/DifferentArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 not exists"
+            fi
+            let SONG_COUNT=SONG_COUNT-1
+          done
+          cd ..
+        else 
+          if [ $HAS_ERROR -eq 0 ] ; then
+            echo "ERROR"
+          fi
+          HAS_ERROR=1
+          echo "ERROR: Directory ${DST_DIR}/DifferentArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT} not exists"
+        fi
+        let ALBUM_COUNT=ALBUM_COUNT-1
+      done
+    else
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: Directory ${DST_DIR}/DifferentArtist${ARTIST_COUNT} not exists"
     fi
     let ARTIST_COUNT=ARTIST_COUNT-1
   done
@@ -346,6 +491,101 @@ function delete_artists {
       echo "ERROR: Directory ${DST_DIR}/OtherArtist${ARTIST_COUNT} not exists"
     fi
     let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
+# Move albums 
+function move_albums {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo -n "Moving Albums..."
+
+  local HAS_ERROR=0
+  if [ ! -d "DifferentArtist1" ]; then
+    if [ $HAS_ERROR -eq 0 ] ; then
+      echo "ERROR"
+    fi
+    HAS_ERROR=1
+    echo "ERROR: Cannot find DifferentArtist1"
+    return
+  fi
+
+  cd DifferentArtist1
+
+  local ALBUM_COUNT=$TEST_SIZE
+  while [ $ALBUM_COUNT -gt 0 ] ; do 
+    if [ -d "GreatAlbum$ALBUM_COUNT" ]; then
+      mv "GreatAlbum$ALBUM_COUNT" "DifferentAlbum$ALBUM_COUNT" &> /dev/null
+    fi
+    let ALBUM_COUNT=ALBUM_COUNT-1
+  done
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
+# Check moved albums
+function check_moved_albums {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo -n "Checking moved Albums..."
+  local HAS_ERROR=0
+  if [ ! -d "DifferentArtist1" ]; then
+    if [ $HAS_ERROR -eq 0 ] ; then
+      echo "ERROR"
+    fi
+    HAS_ERROR=1
+    echo "ERROR: Cannot find DifferentArtist1"
+    return
+  fi
+  cd DifferentArtist1
+
+  local ALBUM_COUNT=$TEST_SIZE
+  while [ $ALBUM_COUNT -gt 0 ]; do
+    if [ -d "DifferentAlbum$ALBUM_COUNT" ]; then
+      cd "DifferentAlbum$ALBUM_COUNT"
+      local SONG_COUNT=$TEST_SIZE
+
+      while [ $SONG_COUNT -gt 0 ]; do
+        if [ -f "Song${SONG_COUNT}.mp3" ]; then
+          if [ ! -s "Song${SONG_COUNT}.mp3" ]; then
+            if [ $HAS_ERROR -eq 0 ] ; then
+              echo "ERROR"
+            fi
+            HAS_ERROR=1
+            echo "ERROR: File ${DST_DIR}/DifferentArtist1/DifferentAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 has 0 size"
+          else
+            check_tags Song${SONG_COUNT}.mp3 DifferentArtist1 DifferentAlbum$ALBUM_COUNT Song${SONG_COUNT}
+            if [ $? -ne 0 ] ; then
+              if [ $HAS_ERROR -eq 0 ] ; then
+                echo "ERROR"
+              fi
+              HAS_ERROR=1
+              echo "ERROR: File ${DST_DIR}/DifferentArtist1/DifferentAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 tags not match"
+            fi
+          fi
+        else
+          if [ $HAS_ERROR -eq 0 ] ; then
+            echo "ERROR"
+          fi
+          HAS_ERROR=1
+          echo "ERROR: File ${DST_DIR}/DifferentArtist1/DifferentAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 not exists"
+        fi
+        let SONG_COUNT=SONG_COUNT-1
+      done
+      cd ..
+    else 
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: Directory ${DST_DIR}/DifferentArtist1/DifferentAlbum${ALBUM_COUNT} not exists"
+    fi
+    let ALBUM_COUNT=ALBUM_COUNT-1
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
@@ -494,6 +734,107 @@ function delete_albums {
       echo "ERROR: Directory ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT} not exists"
     fi
     let ALBUM_COUNT=ALBUM_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
+# Move songs
+function move_songs {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo -n "Moving Songs..."
+
+  local HAS_ERROR=0
+  if [ ! -d "DifferentArtist1" ]; then
+    if [ $HAS_ERROR -eq 0 ] ; then
+      echo "ERROR"
+    fi
+    HAS_ERROR=1
+    echo "ERROR: Cannot find DifferentArtist1"
+    return
+  fi
+
+  cd DifferentArtist1
+
+  if [ ! -d "DifferentAlbum1" ]; then
+    if [ $HAS_ERROR -eq 0 ] ; then
+      echo "ERROR"
+    fi
+    HAS_ERROR=1
+    echo "ERROR: Cannot find DifferentAlbum1"
+    return
+  fi
+
+  cd DifferentAlbum1
+  local SONG_COUNT=$TEST_SIZE
+  while [ $SONG_COUNT -gt 0 ] ; do 
+    if [ -f "Song$SONG_COUNT.mp3" ]; then
+      cp "Song$SONG_COUNT.mp3" "DifferentSong$SONG_COUNT.mp3" &> /dev/null
+    fi
+    let SONG_COUNT=SONG_COUNT-1
+  done
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
+# Check moved songs 
+function check_moved_songs {
+  cd $PWD_DIR
+  cd $DST_DIR
+  echo -n "Checking moved Songs..."
+  local HAS_ERROR=0
+  if [ ! -d "DifferentArtist1" ]; then
+    if [ $HAS_ERROR -eq 0 ] ; then
+      echo "ERROR"
+    fi
+    HAS_ERROR=1
+    echo "ERROR: Cannot find DifferentArtist1"
+    return
+  fi
+  cd DifferentArtist1
+
+  if [ ! -d "DifferentAlbum1" ]; then
+    if [ $HAS_ERROR -eq 0 ] ; then
+      echo "ERROR"
+    fi
+    HAS_ERROR=1
+    echo "ERROR: Cannot find DifferentAlbum1"
+    return
+  fi
+  cd DifferentAlbum1
+
+  local SONG_COUNT=$TEST_SIZE
+
+  while [ $SONG_COUNT -gt 0 ]; do
+    if [ -f "DifferentSong${SONG_COUNT}.mp3" ]; then
+      if [ ! -s "DifferentSong${SONG_COUNT}.mp3" ]; then
+        if [ $HAS_ERROR -eq 0 ] ; then
+          echo "ERROR"
+        fi
+        HAS_ERROR=1
+        echo "ERROR: File ${DST_DIR}/DifferentArtist1/DifferentAlbum1/DifferentSong${SONG_COUNT}.mp3 has 0 size"
+      else
+        check_tags DifferentSong${SONG_COUNT}.mp3 DifferentArtist1 DifferentAlbum1 DifferentSong${SONG_COUNT}
+        if [ $? -ne 0 ] ; then
+          if [ $HAS_ERROR -eq 0 ] ; then
+            echo "ERROR"
+          fi
+          HAS_ERROR=1
+          echo "ERROR: File ${DST_DIR}/DifferentArtist1/DifferentAlbum1/DifferentSong${SONG_COUNT}.mp3 tags not match"
+        fi
+      fi
+    else
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: File ${DST_DIR}/DifferentArtist1/DifferentAlbum1/DifferentSong${SONG_COUNT}.mp3 not exists"
+    fi
+    let SONG_COUNT=SONG_COUNT-1
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
@@ -717,9 +1058,11 @@ function clean_up {
 create_dirs
 create_fake
 create_empty
+create_special
 mount_muli
 check_fake
 check_empty
+check_special
 copy_artists
 check_copied_artists
 copy_albums
@@ -729,6 +1072,12 @@ check_copied_songs
 delete_songs
 delete_albums
 delete_artists
+move_artists
+check_moved_artists
+move_albums
+check_moved_albums
+move_songs
+check_moved_songs
 umount_muli
 clean_up
 
