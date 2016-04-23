@@ -248,9 +248,11 @@ mulifs [global_options] MUSIC_SOURCE MOUNTPOINT
 
 ToDo
 ----
-- Playlists manager 
-- Heavy testing! (I mean, testing routines, testing functions, all the testing stuff!)
+- Playlists manager **(WIP)**
+- Heavy testing! (I mean, testing routines, testing functions, all the testing stuff!) **(WIP)**
 - Add the ability to drop entire folders to the drop folder.
+- Refactoring the code 
+  - This is my first project with Filesystems and Go, I learnt a lot but I created a lot of duplicated code and bad programming practices. This needs to be improved.
 
 
 License
