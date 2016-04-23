@@ -19,7 +19,7 @@
 # this folder.
 
 # Config options
-MULI_X='../mulifs'
+MULI_X='../mulifs -alsologtostderr'
 SRC_DIR='./testSrc'
 DST_DIR='./testDst'
 PWD_DIR=$(pwd)
@@ -223,6 +223,40 @@ function create_fake {
   if [ $HAS_ERROR -eq 0 ] ; then
     echo "OK!"
   fi
+}
+
+# Create fake MP3s function
+function drop_files {
+  cd $PWD_DIR
+  echo -n "Droping files..."
+  local ARTIST_COUNT=$TEST_SIZE
+  local HAS_ERROR=0
+
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    local ALBUM_COUNT=$TEST_SIZE
+    while [ $ALBUM_COUNT -gt 0 ]; do
+      local SONG_COUNT=$TEST_SIZE
+      while [ $SONG_COUNT -gt 0 ]; do
+        cp "test.mp3" "$DST_DIR/drop/Artist${ARTIST_COUNT}Album${ALBUM_COUNT}Song${SONG_COUNT}.mp3" &> /dev/null
+        set_tags "$DST_DIR/drop/Artist${ARTIST_COUNT}Album${ALBUM_COUNT}Song${SONG_COUNT}.mp3" "GreatArtist$ARTIST_COUNT" "GreatAlbum$ALBUM_COUNT" "Song$SONG_COUNT"
+        if [ $? -ne 0 ]; then
+          if [ $HAS_ERROR -eq 0 ] ; then
+            echo "ERROR"
+          fi
+          HAS_ERROR=1
+          echo "ERROR in file $DST_DIR/drop/Artist${ARTIST_COUNT}Album${ALBUM_COUNT}Song${SONG_COUNT}.mp3"
+        fi
+        let SONG_COUNT=SONG_COUNT-1
+      done
+      let ALBUM_COUNT=ALBUM_COUNT-1
+    done
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+  sleep 5
 }
 
 # Check that all the files were in the right place.
@@ -1198,6 +1232,8 @@ move_songs
 check_moved_songs
 mkdirs
 check_mkdirs
+drop_files
+check_fake
 umount_muli
 clean_up
 

@@ -31,7 +31,7 @@ The script will test the following:
 - Test the Rename command (Artists, Albums and songs). 
 - Test the Delete command (Artists, Albums and songs).
 - Test the MkDir comand (Artists, Albums and songs). 
-- Test the Drop directory (throw new files and existing files). (WIP)
+- Test the Drop directory (throw new files and existing files).
 - Test the Playlist Rename command (Artists, Albums and songs). (WIP)
 - Test the Playlist Copy command (Artists, Albums and songs). (WIP)
 - Test the Playlist Delete command (Artists, Albums and songs). (WIP)
