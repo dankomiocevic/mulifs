@@ -546,12 +546,15 @@ function check_playlists_mkdirs {
   while [ $ARTIST_COUNT -gt 0 ]; do
     cd $PWD_DIR
     echo "#EXTM3U" > ${SRC_DIR}/NewList${ARTIST_COUNT}
+    cd $SRC_DIR
+    local BASE_DIR=$(pwd)
+    cd $PWD_DIR
     ALBUM_COUNT=1
     while [ $ALBUM_COUNT -le $TEST_SIZE ]; do
       SONG_COUNT=1
       while [ $SONG_COUNT -le $TEST_SIZE ]; do
         echo "#MULI ListArtist${ARTIST_COUNT} - ListAlbum${ALBUM_COUNT} - NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" >> ${SRC_DIR}/NewList${ARTIST_COUNT}
-        echo "${SRC_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT}/NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" >> ${SRC_DIR}/NewList${ARTIST_COUNT}
+        echo "${BASE_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT}/NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" >> ${SRC_DIR}/NewList${ARTIST_COUNT}
         echo >> ${SRC_DIR}/NewList${ARTIST_COUNT}
         let SONG_COUNT=SONG_COUNT+1
       done
@@ -1373,7 +1376,7 @@ drop_files
 check_fake
 playlist_mkdirs
 check_playlists_mkdirs
-umount_muli
-clean_up
+#umount_muli
+#clean_up
 
 

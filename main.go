@@ -85,16 +85,22 @@ func main() {
 		os.Exit(5)
 	}
 
-	err = tools.ScanFolder(path)
+	path, err = filepath.Abs(path)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(6)
 	}
 
-	err = tools.ScanPlaylistFolder(path)
+	err = tools.ScanFolder(path)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(7)
+	}
+
+	err = tools.ScanPlaylistFolder(path)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(8)
 	}
 
 	// Init the dispatcher system to process
@@ -103,7 +109,7 @@ func main() {
 
 	if err = mount(path, mountpoint); err != nil {
 		log.Fatal(err)
-		os.Exit(8)
+		os.Exit(9)
 	}
 }
 
