@@ -1376,7 +1376,7 @@ drop_files
 check_fake
 playlist_mkdirs
 check_playlists_mkdirs
-#umount_muli
-#clean_up
+umount_muli
+clean_up
 
 
