@@ -37,6 +37,7 @@ The script will test the following:
 - Test the Playlist Delete command (Artists, Albums and songs). **(WIP)**
 - Test the Playlist MkDir command (Artists, Albums and songs).
 - Test the Playlist Drop.
+- Test when files exists in MuLi and are dropped in drop and playlists directories. **(WIP)**
 
 
 Requirements

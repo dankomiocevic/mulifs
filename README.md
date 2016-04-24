@@ -30,9 +30,10 @@ Project status
 This project is currently under development and it is not ready to use yet.
 The basic functionality is ready but some work needs to be done, including:
 
-* Finish the playlists management.
-* Finish the drop Directory.
-* Add testing code.
+* Enable playlists directory to rename playlists and files.
+* Enable playlists directory to delete playlists and files.
+* Finish testing situations. 
+* Enable drop directory to receive full directories and not only files.
 * Test and test!
 
 
