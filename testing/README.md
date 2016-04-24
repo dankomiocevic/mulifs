@@ -35,7 +35,8 @@ The script will test the following:
 - Test the Playlist Rename command (Artists, Albums and songs). **(WIP)**
 - Test the Playlist Copy command (Artists, Albums and songs). **(WIP)**
 - Test the Playlist Delete command (Artists, Albums and songs). **(WIP)**
-- Test the Playlist MkDir command (Artists, Albums and songs). **(WIP)**
+- Test the Playlist MkDir command (Artists, Albums and songs).
+- Test the Playlist Drop.
 
 
 Requirements

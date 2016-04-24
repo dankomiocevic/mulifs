@@ -436,6 +436,143 @@ function check_mkdirs {
   fi
 }
 
+# function to create directories inside playlist folder
+# and fill them with songs. 
+function playlist_mkdirs {
+  cd $PWD_DIR
+  echo -n "Creating dirs inside playlist..."
+  local ARTIST_COUNT=$TEST_SIZE
+  local HAS_ERROR=0
+
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    cd $PWD_DIR
+    mkdir "$DST_DIR/playlists/NewList$ARTIST_COUNT"
+    if [ $? -eq 0 ] ; then
+      cd "$DST_DIR/playlists/NewList$ARTIST_COUNT"
+      local ALBUM_COUNT=$TEST_SIZE
+      while [ $ALBUM_COUNT -gt 0 ]; do
+        local SONG_COUNT=$TEST_SIZE
+        while [ $SONG_COUNT -gt 0 ]; do
+          cp $PWD_DIR/test.mp3 NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3 &> /dev/null
+          set_tags NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3 ListArtist${ARTIST_COUNT} ListAlbum${ALBUM_COUNT} NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}
+          let SONG_COUNT=SONG_COUNT-1
+        done
+        let ALBUM_COUNT=ALBUM_COUNT-1
+      done
+    else 
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: Directory ${DST_DIR}/playlists/NewList${ARTIST_COUNT} cannot be created"
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  sleep 5
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
+# Check that all the created files inside playlists directory 
+# are in the right place.
+function check_playlists_mkdirs {
+  cd $PWD_DIR
+  echo -n "Checking the created files inside playlists..."
+  local ARTIST_COUNT=$TEST_SIZE
+  local HAS_ERROR=0
+
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    cd $PWD_DIR
+    if [ -d "$DST_DIR/ListArtist$ARTIST_COUNT" ]; then
+      cd "$DST_DIR/ListArtist$ARTIST_COUNT"
+      local ALBUM_COUNT=$TEST_SIZE
+      while [ $ALBUM_COUNT -gt 0 ]; do
+        if [ -d "ListAlbum$ALBUM_COUNT" ]; then
+          cd "ListAlbum$ALBUM_COUNT"
+          local SONG_COUNT=$TEST_SIZE
+          while [ $SONG_COUNT -gt 0 ]; do
+            if [ -f "NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" ]; then
+              if [ ! -s "NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" ]; then
+                if [ $HAS_ERROR -eq 0 ] ; then
+                  echo "ERROR"
+                fi
+                HAS_ERROR=1
+                echo "ERROR: File ${DST_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT}/NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3 has 0 size"
+              else
+                check_tags NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3 ListArtist${ARTIST_COUNT} ListAlbum${ALBUM_COUNT} NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT} 
+                if [ $? -ne 0 ] ; then
+                  if [ $HAS_ERROR -eq 0 ] ; then
+                    echo "ERROR"
+                  fi
+                  HAS_ERROR=1
+                  echo "ERROR: File ${DST_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT}/NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3 tags are wrong."
+                fi
+              fi
+            else
+              if [ $HAS_ERROR -eq 0 ] ; then
+                echo "ERROR"
+              fi
+              HAS_ERROR=1
+              echo "ERROR: File ${DST_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT}/NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3 not exists"
+            fi
+            let SONG_COUNT=SONG_COUNT-1
+          done
+          cd ..
+        else 
+          if [ $HAS_ERROR -eq 0 ] ; then
+            echo "ERROR"
+          fi
+          HAS_ERROR=1
+          echo "ERROR: Directory ${DST_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT} not exists"
+        fi
+        let ALBUM_COUNT=ALBUM_COUNT-1
+      done
+    else
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: Directory ${DST_DIR}/ListArtist${ARTIST_COUNT} not exists"
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  # Now test the playlist files.
+  ARTIST_COUNT=$TEST_SIZE
+  local HAS_ERROR=0
+
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    cd $PWD_DIR
+    echo "#EXTM3U" > ${SRC_DIR}/NewList${ARTIST_COUNT}
+    ALBUM_COUNT=1
+    while [ $ALBUM_COUNT -le $TEST_SIZE ]; do
+      SONG_COUNT=1
+      while [ $SONG_COUNT -le $TEST_SIZE ]; do
+        echo "#MULI ListArtist${ARTIST_COUNT} - ListAlbum${ALBUM_COUNT} - NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" >> ${SRC_DIR}/NewList${ARTIST_COUNT}
+        echo "${SRC_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT}/NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" >> ${SRC_DIR}/NewList${ARTIST_COUNT}
+        echo >> ${SRC_DIR}/NewList${ARTIST_COUNT}
+        let SONG_COUNT=SONG_COUNT+1
+      done
+      let ALBUM_COUNT=ALBUM_COUNT+1
+    done
+    cmp --silent ${SRC_DIR}/NewList${ARTIST_COUNT} ${SRC_DIR}/playlists/NewList${ARTIST_COUNT}.m3u 
+    if [ ! $? -eq 0 ] ; then
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "ERROR"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: The playlist ${SRC_DIR}/playlists/NewList${ARTIST_COUNT}.m3u has errors."
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "OK!"
+  fi
+}
+
 # Move artists 
 function move_artists {
   cd $PWD_DIR
@@ -1234,6 +1371,8 @@ mkdirs
 check_mkdirs
 drop_files
 check_fake
+playlist_mkdirs
+check_playlists_mkdirs
 umount_muli
 clean_up
 
