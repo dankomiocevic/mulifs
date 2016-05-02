@@ -79,33 +79,9 @@ func GetPlaylistFilePath(playlist, song, mPoint string) (string, error) {
 	}
 	defer db.Close()
 
-	var returnValue string
-	err = db.View(func(tx *bolt.Tx) error {
-		root := tx.Bucket([]byte("Playlists"))
-		if root == nil {
-			return errors.New("No playlists.")
-		}
-		playlistBucket := root.Bucket([]byte(playlist))
-		if playlistBucket == nil {
-			return errors.New("Playlist not exists.")
-		}
-
-		songJson := playlistBucket.Get([]byte(song))
-		if songJson == nil {
-			return errors.New("Song not found.")
-		}
-
-		var file playlistmgr.PlaylistFile
-		err := json.Unmarshal(songJson, &file)
-		if err != nil {
-			return errors.New("Cannot open song.")
-		}
-		returnValue = file.Path
-		return nil
-	})
-
+	returnValue, err := getPlaylistFile(playlist, song)
 	if err == nil {
-		return returnValue, nil
+		return returnValue.Path, nil
 	}
 
 	if mPoint[len(mPoint)-1] != '/' {
@@ -298,7 +274,7 @@ func RegeneratePlaylistFile(name, mPoint string) error {
 }
 
 // AddFileToPlaylist function adds a file to a specific playlist.
-// The function also checks that the file exist in the MuLi database.
+// The function also checks that the file exists in the MuLi database.
 func AddFileToPlaylist(file playlistmgr.PlaylistFile, playlistName string) error {
 	path, err := GetFilePath(file.Artist, file.Album, file.Title)
 	if err != nil {
@@ -409,10 +385,6 @@ func DeletePlaylist(name, mPoint string) error {
 
 		c := playlistBucket.Cursor()
 		for k, songJson := c.First(); k != nil; k, songJson = c.Next() {
-			if songJson == nil {
-				continue
-			}
-
 			if songJson == nil {
 				glog.Infof("Error opening song Json: %s in playlist: %s\n", k, name)
 				continue
@@ -572,5 +544,170 @@ func DeletePlaylistSong(playlist, name string, force bool) error {
 
 		return playlistBucket.Delete([]byte(name))
 	})
+	return err
+}
+
+// getPlaylistFile returns a PlaylistFile struct
+// with all the information from a specific file
+// inside a playlist.
+func getPlaylistFile(playlist, song string) (playlistmgr.PlaylistFile, error) {
+	glog.Infof("Entered getPlaylistFile with song: %s, and playlist: %s\n", song, playlist)
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return playlistmgr.PlaylistFile{}, err
+	}
+	defer db.Close()
+
+	var returnValue playlistmgr.PlaylistFile
+	err = db.View(func(tx *bolt.Tx) error {
+		root := tx.Bucket([]byte("Playlists"))
+		if root == nil {
+			return errors.New("No playlists.")
+		}
+		playlistBucket := root.Bucket([]byte(playlist))
+		if playlistBucket == nil {
+			return errors.New("Playlist not exists.")
+		}
+
+		songJson := playlistBucket.Get([]byte(song))
+		if songJson == nil {
+			return errors.New("Song not found.")
+		}
+
+		err := json.Unmarshal(songJson, &returnValue)
+		if err != nil {
+			return errors.New("Cannot open song.")
+		}
+		return nil
+	})
+
+	if err == nil {
+		return returnValue, nil
+	}
+	return playlistmgr.PlaylistFile{}, err
+}
+
+// RenamePlaylist moves the entire Playlist and changes all
+// the links to the songs in every MuLi song.
+func RenamePlaylist(oldName, newName, mPoint string) error {
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		root := tx.Bucket([]byte("Playlists"))
+		if root == nil {
+			glog.Errorf("Error opening Playlists bucket.\n")
+			return errors.New("Error opening Playlists bucket.")
+		}
+
+		playlistBucket := root.Bucket([]byte(oldName))
+		if playlistBucket == nil {
+			return nil
+		}
+
+		newPlaylistBucket, err := root.CreateBucketIfNotExists([]byte(newName))
+		if err != nil {
+			glog.Infof("Cannot create new playlist bucket: %s\n", err)
+			return err
+		}
+
+		c := playlistBucket.Cursor()
+		for k, songJson := c.First(); k != nil; k, songJson = c.Next() {
+			if songJson == nil {
+				glog.Infof("Error opening song Json: %s in playlist: %s\n", k, oldName)
+				continue
+			}
+
+			// Get the PlaylistFile
+			var file playlistmgr.PlaylistFile
+			err = json.Unmarshal(songJson, &file)
+			if err != nil {
+				continue
+			}
+
+			// Open the song in the MuLi database
+			// to remove the playlists connection.
+			artistsBucket := tx.Bucket([]byte("Artists"))
+			if artistsBucket == nil {
+				glog.Error("Cannot open Artists bucket.")
+				return errors.New("Cannot open Artists bucket.")
+			}
+
+			artistBucket := artistsBucket.Bucket([]byte(file.Artist))
+			if artistBucket == nil {
+				glog.Infof("Cannot open Artist bucket: %s.\n", file.Artist)
+				continue
+			}
+
+			albumBucket := artistBucket.Bucket([]byte(file.Album))
+			if albumBucket == nil {
+				glog.Infof("Cannot open Album bucket: %s in Artist: %s.\n", file.Album, file.Artist)
+				continue
+			}
+
+			jsonFile := albumBucket.Get([]byte(file.Title))
+			if jsonFile == nil {
+				glog.Infof("Cannot open song: %s Album bucket: %s in Artist: %s.\n", file.Title, file.Album, file.Artist)
+				continue
+			}
+
+			var song SongStore
+			err = json.Unmarshal(jsonFile, &song)
+			if err != nil {
+				return err
+			}
+
+			// Remove the playlist from the song's playlists list
+			if song.Playlists != nil {
+				for i, list := range song.Playlists {
+					if list == oldName {
+						song.Playlists[i] = newName
+						break
+					}
+				}
+			}
+
+			encoded, err := json.Marshal(song)
+			if err != nil {
+				return err
+			}
+
+			// Store the modified song version
+			err = albumBucket.Put([]byte(k), encoded)
+			if err != nil {
+				continue
+			}
+
+			err = newPlaylistBucket.Put(k, songJson)
+			if err != nil {
+				continue
+			}
+		}
+
+		return root.DeleteBucket([]byte(oldName))
+	})
+
+	if err != nil {
+		return err
+
+	}
+	err = RegeneratePlaylistFile(newName, mPoint)
+	return err
+}
+
+// RenamePlaylistSong changes the name on a specific song,
+// it also updates the song in the original place and
+// checks that every playlist containing the song is updated.
+func RenamePlaylistSong(playlist, oldName, newName, mPoint string) error {
+	file, err := getPlaylistFile(playlist, oldName)
+	if err != nil {
+		glog.Infof("Cannot open playlist file: %s\n", err)
+		return err
+	}
+
+	err = MoveSongs(file.Artist, file.Album, file.Title, file.Artist, file.Album, newName, file.Path, mPoint)
 	return err
 }

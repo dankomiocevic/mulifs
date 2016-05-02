@@ -411,12 +411,60 @@ func GetAlbumPath(artist string, album string) (string, error) {
 	return artist, nil
 }
 
+// GetSong returns a SongStore object from the database.
+// If there is an error obtaining the Song
+// the error will be returned.
+func GetSong(artist, album, song string) (SongStore, error) {
+	glog.Infof("Getting file for song: %s Artist: %s Album: %s\n", song, artist, album)
+	db, err := bolt.Open(config.DbPath, 0600, nil)
+	if err != nil {
+		return SongStore{}, err
+	}
+	defer db.Close()
+
+	var returnValue SongStore
+	err = db.View(func(tx *bolt.Tx) error {
+		root := tx.Bucket([]byte("Artists"))
+		if root == nil {
+			return fuse.EIO
+		}
+
+		artistBucket := root.Bucket([]byte(artist))
+		if artistBucket == nil {
+			return fuse.ENOENT
+		}
+
+		albumBucket := artistBucket.Bucket([]byte(album))
+		if albumBucket == nil {
+			return fuse.ENOENT
+		}
+
+		songJson := albumBucket.Get([]byte(song))
+		if songJson == nil {
+			glog.Info("Song not found.")
+			return fuse.ENOENT
+		}
+
+		err := json.Unmarshal(songJson, &returnValue)
+		if err != nil {
+			glog.Error("Cannot open song.")
+			return errors.New("Cannot open song.")
+		}
+		return nil
+	})
+
+	if err != nil {
+		return SongStore{}, err
+	}
+	return returnValue, nil
+}
+
 // GetFilePath checks that a specified Song
 // Album exists on the database and returns
 // the full path to the Song file.
 // If there is an error obtaining the Song
 // an error will be returned.
-func GetFilePath(artist string, album string, song string) (string, error) {
+func GetFilePath(artist, album, song string) (string, error) {
 	glog.Infof("Getting file path for song: %s Artist: %s Album: %s\n", song, artist, album)
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {

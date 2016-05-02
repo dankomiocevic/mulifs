@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/dankomiocevic/mulifs/musicmgr"
+	"github.com/dankomiocevic/mulifs/playlistmgr"
 	"os"
 	"path/filepath"
 
@@ -38,6 +39,7 @@ import (
 func MoveSongs(oldArtist, oldAlbum, oldName, newArtist, newAlbum, newName, path, mPoint string) error {
 	glog.Infof("Moving song from Artist: %s, Album: %s, name: %s and path: %s to Artist: %s, Album: %s, name: %s\n", oldArtist, oldAlbum, oldName, path, newArtist, newAlbum, newName)
 
+	// Check file extension.
 	extension := filepath.Ext(path)
 	if extension != ".mp3" {
 		glog.Info("Wrong file format.")
@@ -51,30 +53,58 @@ func MoveSongs(oldArtist, oldAlbum, oldName, newArtist, newAlbum, newName, path,
 	newPath := rootPoint + newArtist + "/" + newAlbum + "/"
 	newFullPath := newPath + GetCompatibleString(newName[:len(newName)-len(extension)]) + extension
 
-	err := os.Rename(path, newFullPath)
+	// Get all the Playlists form the file.
+	songStore, err := GetSong(oldArtist, oldAlbum, oldName)
+	if err != nil {
+		glog.Infof("Cannot get the file from the database: %s\n", err)
+	}
+
+	// Delete the song from all the playlists
+	for _, pl := range songStore.Playlists {
+		DeletePlaylistSong(pl, oldName, true)
+	}
+
+	// Rename the file
+	err = os.Rename(path, newFullPath)
 	if err != nil {
 		glog.Infof("Cannot rename the file: %s\n", err)
 		return err
 	}
 
+	// Delete the song from the database
 	err = DeleteSong(oldArtist, oldAlbum, oldName, mPoint)
 	if err != nil {
 		glog.Infof("Cannot delete song: %s\n", err)
 		return err
 	}
 
+	// Change the tags in the file.
 	musicmgr.SetMp3Tags(newArtist, newAlbum, newName, newFullPath)
+	// Add the song again to the database.
 	_, err = CreateSong(newArtist, newAlbum, newName, newPath)
 	if err != nil {
 		glog.Infof("Cannot create son in the db: %s\n", err)
 	}
-	return err
+
+	// Add the song to all the playlists.
+	for _, pl := range songStore.Playlists {
+		file := playlistmgr.PlaylistFile{
+			Title:  newName,
+			Artist: newArtist,
+			Album:  newAlbum,
+			Path:   newPath,
+		}
+
+		AddFileToPlaylist(file, pl)
+		RegeneratePlaylistFile(pl, mPoint)
+	}
+
+	return nil
 }
 
-/** processNewArtist returns all the albums inside an Artist and
- *  prepares the new folder for the new Artist.
- *  It also creates the description files and Buckets in the DB.
- */
+// processNewArtist returns all the albums inside an Artist and
+// prepares the new folder for the new Artist.
+// It also creates the description files and Buckets in the DB.
 func processNewArtist(newArtist, oldArtist string) ([]string, error) {
 	var albums []string
 
@@ -148,10 +178,9 @@ func processNewArtist(newArtist, oldArtist string) ([]string, error) {
 	return albums, err
 }
 
-/** processNewAlbum returns all the songs inside an Album and
- *  prepares the new folder for the new Album.
- *  It also creates the description files and Buckets in the DB.
- */
+// processNewAlbum returns all the songs inside an Album and
+// prepares the new folder for the new Album.
+// It also creates the description files and Buckets in the DB.
 func processNewAlbum(newArtist, newAlbum, oldArtist, oldAlbum string) ([][]byte, error) {
 	var songs [][]byte
 

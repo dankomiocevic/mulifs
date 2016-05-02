@@ -572,7 +572,21 @@ func (d *Dir) Rename(ctx context.Context, r *fuse.RenameRequest, newDir fs.Node)
 
 	if d.artist == "playlists" {
 		glog.Info("Rename inside playlists folder.")
-		//TODO: Rename inside playlists.
+		var err error
+		if len(d.album) < 1 {
+			glog.Info("Rename playlist name.")
+			err = store.RenamePlaylist(r.OldName, r.NewName, d.mPoint)
+			if err != nil {
+				return fuse.EIO
+			}
+			return nil
+		}
+
+		err = store.RenamePlaylistSong(d.album, r.OldName, r.NewName, d.mPoint)
+		if err != nil {
+			return fuse.EIO
+		}
+
 		return nil
 	}
 
