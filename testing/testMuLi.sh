@@ -25,6 +25,11 @@ DST_DIR='./testDst'
 PWD_DIR=$(pwd)
 TEST_SIZE=2
 
+# Set Colors
+RED=`tput setaf 1`
+GREEN=`tput setaf 2`
+NC=`tput sgr0`
+
 # Tag setting function
 # This function is used to set the tags to the MP3 files.
 # The first argument is the file.
@@ -86,7 +91,7 @@ function create_empty {
   #TODO: Maybe test here what happens if we only add some tags
   #       like Artist or Album only.
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -98,14 +103,14 @@ function check_empty {
   local HAS_ERROR=0
 
   if [ ! -d "unknown" ] ; then
-    echo "ERROR"
+    echo "${RED}ERROR${NC}"
     echo "The unknown Artist directory does not exist."
     return 1
   fi
   cd unknown
 
   if [ ! -d "unknown" ] ; then
-    echo "ERROR"
+    echo "${RED}ERROR${NC}"
     echo "The unknown Album directory does not exist."
     return 2
   fi
@@ -115,21 +120,21 @@ function check_empty {
     check_tags empty.mp3 unknown unknown empty
     if [ $? -ne 0 ] ; then
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: File unknown/unknown/empty.mp3 tags not match"
     fi
   else
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "The empty.mp3 file cannot be found."
   fi
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -144,7 +149,7 @@ function create_special {
   #TODO: Maybe test here what happens if we only add some tags
   #       like Artist or Album only.
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -157,14 +162,14 @@ function check_special {
   local HAS_ERROR=0
 
   if [ ! -d "Increible_Artista" ] ; then
-    echo "ERROR"
+    echo "${RED}ERROR${NC}"
     echo "The special Artist directory does not exist."
     return 1
   fi
   cd Increible_Artista 
 
   if [ ! -d "Suco_de_Acai" ] ; then
-    echo "ERROR"
+    echo "${RED}ERROR${NC}"
     echo "The special Album directory does not exist."
     return 2
   fi
@@ -174,21 +179,21 @@ function check_special {
     check_tags $SRC_DIR/special.mp3 "Increíble Artista!" "Suco de Açaí" "Canción"
     if [ $? -ne 0 ] ; then
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: File Increible_Artista/Suco_de_Acai/Cancion.mp3 tags not match"
     fi
   else
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "The Cancion.mp3 file cannot be found."
   fi
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}" 
   fi
 }
 
@@ -208,7 +213,7 @@ function create_fake {
         set_tags "$SRC_DIR/testAr${ARTIST_COUNT}Al${ALBUM_COUNT}Sn${SONG_COUNT}.mp3" "GreatArtist$ARTIST_COUNT" "GreatAlbum$ALBUM_COUNT" "Song$SONG_COUNT"
         if [ $? -ne 0 ]; then
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR in file $SRC_DIR/testAr${ARTIST_COUNT}Al${ALBUM_COUNT}Sn${SONG_COUNT}.mp3"
@@ -221,7 +226,7 @@ function create_fake {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}" 
   fi
 }
 
@@ -241,7 +246,7 @@ function drop_files {
         set_tags "$DST_DIR/drop/Artist${ARTIST_COUNT}Album${ALBUM_COUNT}Song${SONG_COUNT}.mp3" "GreatArtist$ARTIST_COUNT" "GreatAlbum$ALBUM_COUNT" "Song$SONG_COUNT"
         if [ $? -ne 0 ]; then
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR in file $DST_DIR/drop/Artist${ARTIST_COUNT}Album${ALBUM_COUNT}Song${SONG_COUNT}.mp3"
@@ -254,7 +259,7 @@ function drop_files {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
   sleep 5
 }
@@ -279,14 +284,14 @@ function check_fake {
             if [ -f "Song${SONG_COUNT}.mp3" ]; then
               if [ ! -s "Song${SONG_COUNT}.mp3" ]; then
                 if [ $HAS_ERROR -eq 0 ] ; then
-                  echo "ERROR"
+                  echo "${RED}ERROR${NC}"
                 fi
                 HAS_ERROR=1
                 echo "ERROR: File ${DST_DIR}/GreatArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 has 0 size"
               fi
             else
               if [ $HAS_ERROR -eq 0 ] ; then
-                echo "ERROR"
+                echo "${RED}ERROR${NC}"
               fi
               HAS_ERROR=1
               echo "ERROR: File ${DST_DIR}/GreatArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 not exists"
@@ -296,7 +301,7 @@ function check_fake {
           cd ..
         else 
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: Directory ${DST_DIR}/GreatArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT} not exists"
@@ -305,7 +310,7 @@ function check_fake {
       done
     else
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: Directory ${DST_DIR}/GreatArtist${ARTIST_COUNT} not exists"
@@ -314,7 +319,7 @@ function check_fake {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -344,7 +349,7 @@ function mkdirs {
           cd ..
         else 
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: Directory ${DST_DIR}/NewArtist${ARTIST_COUNT}/NewAlbum${ALBUM_COUNT} cannot be created"
@@ -353,7 +358,7 @@ function mkdirs {
       done
     else
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: Directory ${DST_DIR}/NewArtist${ARTIST_COUNT} cannot be created"
@@ -362,7 +367,7 @@ function mkdirs {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -388,7 +393,7 @@ function check_mkdirs {
             if [ -f "NewSong${SONG_COUNT}.mp3" ]; then
               if [ ! -s "NewSong${SONG_COUNT}.mp3" ]; then
                 if [ $HAS_ERROR -eq 0 ] ; then
-                  echo "ERROR"
+                  echo "${RED}ERROR${NC}"
                 fi
                 HAS_ERROR=1
                 echo "ERROR: File ${DST_DIR}/NewArtist${ARTIST_COUNT}/NewAlbum${ALBUM_COUNT}/NewSong${SONG_COUNT}.mp3 has 0 size"
@@ -396,7 +401,7 @@ function check_mkdirs {
                 check_tags NewSong${SONG_COUNT}.mp3 NewArtist${ARTIST_COUNT} NewAlbum${ALBUM_COUNT} NewSong${SONG_COUNT}
                 if [ $? -ne 0 ] ; then
                   if [ $HAS_ERROR -eq 0 ] ; then
-                    echo "ERROR"
+                    echo "${RED}ERROR${NC}"
                   fi
                   HAS_ERROR=1
                   echo "ERROR: File ${DST_DIR}/NewArtist${ARTIST_COUNT}/NewAlbum${ALBUM_COUNT}/NewSong${SONG_COUNT}.mp3 tags are wrong."
@@ -404,7 +409,7 @@ function check_mkdirs {
               fi
             else
               if [ $HAS_ERROR -eq 0 ] ; then
-                echo "ERROR"
+                echo "${RED}ERROR${NC}"
               fi
               HAS_ERROR=1
               echo "ERROR: File ${DST_DIR}/NewArtist${ARTIST_COUNT}/NewAlbum${ALBUM_COUNT}/NewSong${SONG_COUNT}.mp3 not exists"
@@ -414,7 +419,7 @@ function check_mkdirs {
           cd ..
         else 
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: Directory ${DST_DIR}/NewArtist${ARTIST_COUNT}/NewAlbum${ALBUM_COUNT} not exists"
@@ -423,7 +428,7 @@ function check_mkdirs {
       done
     else
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: Directory ${DST_DIR}/NewArtist${ARTIST_COUNT} not exists"
@@ -432,7 +437,7 @@ function check_mkdirs {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -455,13 +460,14 @@ function playlist_mkdirs {
         while [ $SONG_COUNT -gt 0 ]; do
           cp $PWD_DIR/test.mp3 NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3 &> /dev/null
           set_tags NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3 ListArtist${ARTIST_COUNT} ListAlbum${ALBUM_COUNT} NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}
+          sleep 1
           let SONG_COUNT=SONG_COUNT-1
         done
         let ALBUM_COUNT=ALBUM_COUNT-1
       done
     else 
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: Directory ${DST_DIR}/playlists/NewList${ARTIST_COUNT} cannot be created"
@@ -469,9 +475,8 @@ function playlist_mkdirs {
     let ARTIST_COUNT=ARTIST_COUNT-1
   done
 
-  sleep 5
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -496,7 +501,7 @@ function check_playlists_mkdirs {
             if [ -f "NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" ]; then
               if [ ! -s "NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" ]; then
                 if [ $HAS_ERROR -eq 0 ] ; then
-                  echo "ERROR"
+                  echo "${RED}ERROR${NC}"
                 fi
                 HAS_ERROR=1
                 echo "ERROR: File ${DST_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT}/NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3 has 0 size"
@@ -504,7 +509,7 @@ function check_playlists_mkdirs {
                 check_tags NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3 ListArtist${ARTIST_COUNT} ListAlbum${ALBUM_COUNT} NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT} 
                 if [ $? -ne 0 ] ; then
                   if [ $HAS_ERROR -eq 0 ] ; then
-                    echo "ERROR"
+                    echo "${RED}ERROR${NC}"
                   fi
                   HAS_ERROR=1
                   echo "ERROR: File ${DST_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT}/NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3 tags are wrong."
@@ -512,7 +517,7 @@ function check_playlists_mkdirs {
               fi
             else
               if [ $HAS_ERROR -eq 0 ] ; then
-                echo "ERROR"
+                echo "${RED}ERROR${NC}"
               fi
               HAS_ERROR=1
               echo "ERROR: File ${DST_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT}/NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3 not exists"
@@ -522,7 +527,7 @@ function check_playlists_mkdirs {
           cd ..
         else 
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: Directory ${DST_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT} not exists"
@@ -531,7 +536,7 @@ function check_playlists_mkdirs {
       done
     else
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: Directory ${DST_DIR}/ListArtist${ARTIST_COUNT} not exists"
@@ -563,7 +568,7 @@ function check_playlists_mkdirs {
     cmp --silent ${SRC_DIR}/NewList${ARTIST_COUNT} ${SRC_DIR}/playlists/NewList${ARTIST_COUNT}.m3u 
     if [ ! $? -eq 0 ] ; then
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: The playlist ${SRC_DIR}/playlists/NewList${ARTIST_COUNT}.m3u has errors."
@@ -572,7 +577,7 @@ function check_playlists_mkdirs {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -590,7 +595,7 @@ function move_artists {
     let ARTIST_COUNT=ARTIST_COUNT-1
   done
 
-  echo "OK!"
+  echo "${GREEN}OK!${NC}"
 }
 
 # Check moved Artists
@@ -614,7 +619,7 @@ function check_moved_artists {
             if [ -f "Song${SONG_COUNT}.mp3" ]; then
               if [ ! -s "Song${SONG_COUNT}.mp3" ]; then
                 if [ $HAS_ERROR -eq 0 ] ; then
-                  echo "ERROR"
+                  echo "${RED}ERROR${NC}"
                 fi
                 HAS_ERROR=1
                 echo "ERROR: File ${DST_DIR}/DifferentArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 has 0 size"
@@ -622,7 +627,7 @@ function check_moved_artists {
                 check_tags Song${SONG_COUNT}.mp3 DifferentArtist$ARTIST_COUNT GreatAlbum$ALBUM_COUNT Song${SONG_COUNT}
                 if [ $? -ne 0 ] ; then
                   if [ $HAS_ERROR -eq 0 ] ; then
-                    echo "ERROR"
+                    echo "${RED}ERROR${NC}"
                   fi
                   HAS_ERROR=1
                   echo "ERROR: File ${DST_DIR}/DifferentArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 tags not match"
@@ -630,7 +635,7 @@ function check_moved_artists {
               fi
             else
               if [ $HAS_ERROR -eq 0 ] ; then
-                echo "ERROR"
+                echo "${RED}ERROR${NC}"
               fi
               HAS_ERROR=1
               echo "ERROR: File ${DST_DIR}/DifferentArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 not exists"
@@ -640,7 +645,7 @@ function check_moved_artists {
           cd ..
         else 
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: Directory ${DST_DIR}/DifferentArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT} not exists"
@@ -649,7 +654,7 @@ function check_moved_artists {
       done
     else
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: Directory ${DST_DIR}/DifferentArtist${ARTIST_COUNT} not exists"
@@ -658,7 +663,7 @@ function check_moved_artists {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -676,7 +681,7 @@ function copy_artists {
     let ARTIST_COUNT=ARTIST_COUNT-1
   done
 
-  echo "OK!"
+  echo "${GREEN}OK!${NC}"
 }
 
 # Check copied Artists
@@ -700,7 +705,7 @@ function check_copied_artists {
             if [ -f "Song${SONG_COUNT}.mp3" ]; then
               if [ ! -s "Song${SONG_COUNT}.mp3" ]; then
                 if [ $HAS_ERROR -eq 0 ] ; then
-                  echo "ERROR"
+                  echo "${RED}ERROR${NC}"
                 fi
                 HAS_ERROR=1
                 echo "ERROR: File ${DST_DIR}/OtherArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 has 0 size"
@@ -708,7 +713,7 @@ function check_copied_artists {
                 check_tags Song${SONG_COUNT}.mp3 OtherArtist$ARTIST_COUNT GreatAlbum$ALBUM_COUNT Song${SONG_COUNT}
                 if [ $? -ne 0 ] ; then
                   if [ $HAS_ERROR -eq 0 ] ; then
-                    echo "ERROR"
+                    echo "${RED}ERROR${NC}"
                   fi
                   HAS_ERROR=1
                   echo "ERROR: File ${DST_DIR}/OtherArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 tags not match"
@@ -716,7 +721,7 @@ function check_copied_artists {
               fi
             else
               if [ $HAS_ERROR -eq 0 ] ; then
-                echo "ERROR"
+                echo "${RED}ERROR${NC}"
               fi
               HAS_ERROR=1
               echo "ERROR: File ${DST_DIR}/OtherArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 not exists"
@@ -726,7 +731,7 @@ function check_copied_artists {
           cd ..
         else 
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: Directory ${DST_DIR}/OtherArtist${ARTIST_COUNT}/GreatAlbum${ALBUM_COUNT} not exists"
@@ -735,7 +740,7 @@ function check_copied_artists {
       done
     else
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: Directory ${DST_DIR}/OtherArtist${ARTIST_COUNT} not exists"
@@ -744,7 +749,7 @@ function check_copied_artists {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -763,21 +768,21 @@ function delete_artists {
       if [ $? -eq 0 ] ; then
         if [ -d "$DST_DIR/OtherArtist$ARTIST_COUNT" ]; then
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: Directory ${DST_DIR}/OtherArtist${ARTIST_COUNT} has not been deleted."
         fi 
       else
         if [ $HAS_ERROR -eq 0 ] ; then
-          echo "ERROR"
+          echo "${RED}ERROR${NC}"
         fi
         HAS_ERROR=1
         echo "ERROR: Directory ${DST_DIR}/OtherArtist${ARTIST_COUNT} cannot be deleted."
       fi
     else
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: Directory ${DST_DIR}/OtherArtist${ARTIST_COUNT} not exists"
@@ -786,7 +791,7 @@ function delete_artists {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -799,7 +804,7 @@ function move_albums {
   local HAS_ERROR=0
   if [ ! -d "DifferentArtist1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find DifferentArtist1"
@@ -816,7 +821,7 @@ function move_albums {
     let ALBUM_COUNT=ALBUM_COUNT-1
   done
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -828,7 +833,7 @@ function check_moved_albums {
   local HAS_ERROR=0
   if [ ! -d "DifferentArtist1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find DifferentArtist1"
@@ -846,7 +851,7 @@ function check_moved_albums {
         if [ -f "Song${SONG_COUNT}.mp3" ]; then
           if [ ! -s "Song${SONG_COUNT}.mp3" ]; then
             if [ $HAS_ERROR -eq 0 ] ; then
-              echo "ERROR"
+              echo "${RED}ERROR${NC}"
             fi
             HAS_ERROR=1
             echo "ERROR: File ${DST_DIR}/DifferentArtist1/DifferentAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 has 0 size"
@@ -854,7 +859,7 @@ function check_moved_albums {
             check_tags Song${SONG_COUNT}.mp3 DifferentArtist1 DifferentAlbum$ALBUM_COUNT Song${SONG_COUNT}
             if [ $? -ne 0 ] ; then
               if [ $HAS_ERROR -eq 0 ] ; then
-                echo "ERROR"
+                echo "${RED}ERROR${NC}"
               fi
               HAS_ERROR=1
               echo "ERROR: File ${DST_DIR}/DifferentArtist1/DifferentAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 tags not match"
@@ -862,7 +867,7 @@ function check_moved_albums {
           fi
         else
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: File ${DST_DIR}/DifferentArtist1/DifferentAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 not exists"
@@ -872,7 +877,7 @@ function check_moved_albums {
       cd ..
     else 
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: Directory ${DST_DIR}/DifferentArtist1/DifferentAlbum${ALBUM_COUNT} not exists"
@@ -881,7 +886,7 @@ function check_moved_albums {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -894,7 +899,7 @@ function copy_albums {
   local HAS_ERROR=0
   if [ ! -d "GreatArtist1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find GreatArtist1"
@@ -911,7 +916,7 @@ function copy_albums {
     let ALBUM_COUNT=ALBUM_COUNT-1
   done
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -923,7 +928,7 @@ function check_copied_albums {
   local HAS_ERROR=0
   if [ ! -d "GreatArtist1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find GreatArtist1"
@@ -941,7 +946,7 @@ function check_copied_albums {
         if [ -f "Song${SONG_COUNT}.mp3" ]; then
           if [ ! -s "Song${SONG_COUNT}.mp3" ]; then
             if [ $HAS_ERROR -eq 0 ] ; then
-              echo "ERROR"
+              echo "${RED}ERROR${NC}"
             fi
             HAS_ERROR=1
             echo "ERROR: File ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 has 0 size"
@@ -949,7 +954,7 @@ function check_copied_albums {
             check_tags Song${SONG_COUNT}.mp3 GreatArtist1 OtherAlbum$ALBUM_COUNT Song${SONG_COUNT}
             if [ $? -ne 0 ] ; then
               if [ $HAS_ERROR -eq 0 ] ; then
-                echo "ERROR"
+                echo "${RED}ERROR${NC}"
               fi
               HAS_ERROR=1
               echo "ERROR: File ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 tags not match"
@@ -957,7 +962,7 @@ function check_copied_albums {
           fi
         else
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: File ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT}/Song${SONG_COUNT}.mp3 not exists"
@@ -967,7 +972,7 @@ function check_copied_albums {
       cd ..
     else 
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: Directory ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT} not exists"
@@ -976,7 +981,7 @@ function check_copied_albums {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -988,7 +993,7 @@ function delete_albums {
   local HAS_ERROR=0
   if [ ! -d "GreatArtist1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find GreatArtist1"
@@ -1005,14 +1010,14 @@ function delete_albums {
       if [ $? -eq 0 ] ; then
         if [ -d "OtherAlbum$ALBUM_COUNT" ]; then
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: Directory ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT} has not been deleted."
         fi
       else
         if [ $HAS_ERROR -eq 0 ] ; then
-          echo "ERROR"
+          echo "${RED}ERROR${NC}"
         fi
         HAS_ERROR=1
         echo "ERROR: Directory ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT} cannot be deleted."
@@ -1020,7 +1025,7 @@ function delete_albums {
       cd ..
     else 
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: Directory ${DST_DIR}/GreatArtist1/OtherAlbum${ALBUM_COUNT} not exists"
@@ -1029,7 +1034,7 @@ function delete_albums {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -1042,7 +1047,7 @@ function move_songs {
   local HAS_ERROR=0
   if [ ! -d "DifferentArtist1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find DifferentArtist1"
@@ -1053,7 +1058,7 @@ function move_songs {
 
   if [ ! -d "DifferentAlbum1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find DifferentAlbum1"
@@ -1069,7 +1074,7 @@ function move_songs {
     let SONG_COUNT=SONG_COUNT-1
   done
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -1081,7 +1086,7 @@ function check_moved_songs {
   local HAS_ERROR=0
   if [ ! -d "DifferentArtist1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find DifferentArtist1"
@@ -1091,7 +1096,7 @@ function check_moved_songs {
 
   if [ ! -d "DifferentAlbum1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find DifferentAlbum1"
@@ -1105,7 +1110,7 @@ function check_moved_songs {
     if [ -f "DifferentSong${SONG_COUNT}.mp3" ]; then
       if [ ! -s "DifferentSong${SONG_COUNT}.mp3" ]; then
         if [ $HAS_ERROR -eq 0 ] ; then
-          echo "ERROR"
+          echo "${RED}ERROR${NC}"
         fi
         HAS_ERROR=1
         echo "ERROR: File ${DST_DIR}/DifferentArtist1/DifferentAlbum1/DifferentSong${SONG_COUNT}.mp3 has 0 size"
@@ -1113,7 +1118,7 @@ function check_moved_songs {
         check_tags DifferentSong${SONG_COUNT}.mp3 DifferentArtist1 DifferentAlbum1 DifferentSong${SONG_COUNT}
         if [ $? -ne 0 ] ; then
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: File ${DST_DIR}/DifferentArtist1/DifferentAlbum1/DifferentSong${SONG_COUNT}.mp3 tags not match"
@@ -1121,7 +1126,7 @@ function check_moved_songs {
       fi
     else
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: File ${DST_DIR}/DifferentArtist1/DifferentAlbum1/DifferentSong${SONG_COUNT}.mp3 not exists"
@@ -1130,7 +1135,7 @@ function check_moved_songs {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -1143,7 +1148,7 @@ function copy_songs {
   local HAS_ERROR=0
   if [ ! -d "GreatArtist1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find GreatArtist1"
@@ -1154,7 +1159,7 @@ function copy_songs {
 
   if [ ! -d "GreatAlbum1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find GreatAlbum1"
@@ -1170,7 +1175,7 @@ function copy_songs {
     let SONG_COUNT=SONG_COUNT-1
   done
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -1182,7 +1187,7 @@ function check_copied_songs {
   local HAS_ERROR=0
   if [ ! -d "GreatArtist1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find GreatArtist1"
@@ -1192,7 +1197,7 @@ function check_copied_songs {
 
   if [ ! -d "GreatAlbum1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find GreatAlbum1"
@@ -1206,7 +1211,7 @@ function check_copied_songs {
     if [ -f "OtherSong${SONG_COUNT}.mp3" ]; then
       if [ ! -s "OtherSong${SONG_COUNT}.mp3" ]; then
         if [ $HAS_ERROR -eq 0 ] ; then
-          echo "ERROR"
+          echo "${RED}ERROR${NC}"
         fi
         HAS_ERROR=1
         echo "ERROR: File ${DST_DIR}/GreatArtist1/GreatAlbum1/OtherSong${SONG_COUNT}.mp3 has 0 size"
@@ -1214,7 +1219,7 @@ function check_copied_songs {
         check_tags OtherSong${SONG_COUNT}.mp3 GreatArtist1 GreatAlbum1 OtherSong${SONG_COUNT}
         if [ $? -ne 0 ] ; then
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: File ${DST_DIR}/GreatArtist1/GreatAlbum1/OtherSong${SONG_COUNT}.mp3 tags not match"
@@ -1222,7 +1227,7 @@ function check_copied_songs {
       fi
     else
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: File ${DST_DIR}/GreatArtist1/GreatAlbum1/OtherSong${SONG_COUNT}.mp3 not exists"
@@ -1231,7 +1236,7 @@ function check_copied_songs {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -1243,7 +1248,7 @@ function delete_songs {
   local HAS_ERROR=0
   if [ ! -d "GreatArtist1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find GreatArtist1"
@@ -1253,7 +1258,7 @@ function delete_songs {
 
   if [ ! -d "GreatAlbum1" ]; then
     if [ $HAS_ERROR -eq 0 ] ; then
-      echo "ERROR"
+      echo "${RED}ERROR${NC}"
     fi
     HAS_ERROR=1
     echo "ERROR: Cannot find GreatAlbum1"
@@ -1268,14 +1273,14 @@ function delete_songs {
       rm -f OtherSong${SONG_COUNT}.mp3 &> /dev/null
       if [ $? -ne 0 ] ; then
         if [ $HAS_ERROR -eq 0 ] ; then
-          echo "ERROR"
+          echo "${RED}ERROR${NC}"
         fi
         HAS_ERROR=1
         echo "ERROR: File ${DST_DIR}/GreatArtist1/GreatAlbum1/OtherSong${SONG_COUNT}.mp3 cannot be deleted."
       else
         if [ -f "OtherSong${SONG_COUNT}.mp3" ]; then
           if [ $HAS_ERROR -eq 0 ] ; then
-            echo "ERROR"
+            echo "${RED}ERROR${NC}"
           fi
           HAS_ERROR=1
           echo "ERROR: File ${DST_DIR}/GreatArtist1/GreatAlbum1/OtherSong${SONG_COUNT}.mp3 has not been deleted."
@@ -1283,7 +1288,7 @@ function delete_songs {
       fi
     else
       if [ $HAS_ERROR -eq 0 ] ; then
-        echo "ERROR"
+        echo "${RED}ERROR${NC}"
       fi
       HAS_ERROR=1
       echo "ERROR: File ${DST_DIR}/GreatArtist1/GreatAlbum1/OtherSong${SONG_COUNT}.mp3 not exists"
@@ -1292,7 +1297,7 @@ function delete_songs {
   done
 
   if [ $HAS_ERROR -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   fi
 }
 
@@ -1302,9 +1307,9 @@ function create_dirs {
   echo -n "Creating dirs..."
   mkdir $SRC_DIR $DST_DIR &> /dev/null
   if [ $? -eq 0 ] ; then
-      echo "OK!"
+      echo "${GREEN}OK!${NC}"
   else
-    echo "ERROR"
+    echo "${RED}ERROR${NC}"
   fi
 }
 
@@ -1317,7 +1322,7 @@ function mount_muli {
   while [ ! -d "$DST_DIR/drop" ]; do
     sleep 1
   done
-  echo "OK!"
+  echo "${GREEN}OK!${NC}"
 }
 
 # Umount FS function
@@ -1327,9 +1332,9 @@ function umount_muli {
   # Umount the destination directory
   umount $DST_DIR
   if [ $? -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   else
-    echo "ERROR"
+    echo "${RED}ERROR${NC}"
   fi
 }
 
@@ -1340,9 +1345,9 @@ function clean_up {
   # Delete the SRC and DST folders
   rm -rf $SRC_DIR $DST_DIR muli.db
   if [ $? -eq 0 ] ; then
-    echo "OK!"
+    echo "${GREEN}OK!${NC}"
   else
-    echo "ERROR"
+    echo "${RED}ERROR${NC}"
   fi
 }
 
@@ -1357,24 +1362,31 @@ check_empty
 check_special
 copy_artists
 check_copied_artists
+sleep 3
 copy_albums
+sleep 3
 check_copied_albums
 copy_songs
+sleep 3
 check_copied_songs
 delete_songs
 delete_albums
 delete_artists
 move_artists
+sleep 3
 check_moved_artists
 move_albums
+sleep 3
 check_moved_albums
 move_songs
+sleep 3
 check_moved_songs
 mkdirs
 check_mkdirs
 drop_files
 check_fake
 playlist_mkdirs
+sleep 10
 check_playlists_mkdirs
 umount_muli
 clean_up
