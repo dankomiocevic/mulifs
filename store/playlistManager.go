@@ -73,11 +73,6 @@ func GetPlaylistPath(playlist string) (string, error) {
 // that will be nil if everything is ok.
 func GetPlaylistFilePath(playlist, song, mPoint string) (string, error) {
 	glog.Infof("Entered Playlist file path with song: %s, and playlist: %s\n", song, playlist)
-	db, err := bolt.Open(config.DbPath, 0600, nil)
-	if err != nil {
-		return "", err
-	}
-	defer db.Close()
 
 	returnValue, err := getPlaylistFile(playlist, song)
 	if err == nil {
