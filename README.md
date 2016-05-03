@@ -21,7 +21,7 @@ mulifs MUSIC_SOURCE MOUNTPOINT
 ```
 
 Where the MUSIC_SOURCE is the path where the music is stored and
-MOUNTPOINT is the path where MuLi sould be mounted.
+MOUNTPOINT is the path where MuLi should be mounted.
 
 
 Project status
@@ -30,8 +30,6 @@ Project status
 This project is currently under development and it is not ready to use yet.
 The basic functionality is ready but some work needs to be done, including:
 
-* Enable playlists directory to rename playlists and files.
-* Enable playlists directory to delete playlists and files.
 * Finish testing situations. 
 * Enable drop directory to receive full directories and not only files.
 * Test and test!
@@ -44,10 +42,11 @@ Organizing a Music library is always a tedious task and there is always
 lots of different information that does not match.
 
 MuLi reads a Directory tree (Directories and Subdirectories of a specific
-path) and scans for all the music files (it actually supports only MP3).
+path) and scans for all the music files (it actually supports only MP3, but more
+formats will be added).
 Every time it finds a music file it reads the ID Tags that specify the 
 Artist, Album and Song name.
-If any of these parameters are missing it completes the information with
+If any of these parameters is missing it completes the information with
 default values (unknown Artist or Album and tries to read the song name 
 from the path) and updates the Tags for future scans.
 It stores all the gathered information into a BoltDB that is an object 
