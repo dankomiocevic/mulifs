@@ -546,7 +546,6 @@ function check_playlists_mkdirs {
 
   # Now test the playlist files.
   ARTIST_COUNT=$TEST_SIZE
-  local HAS_ERROR=0
 
   while [ $ARTIST_COUNT -gt 0 ]; do
     cd $PWD_DIR
@@ -572,6 +571,167 @@ function check_playlists_mkdirs {
       fi
       HAS_ERROR=1
       echo "ERROR: The playlist ${SRC_DIR}/playlists/NewList${ARTIST_COUNT}.m3u has errors."
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "${GREEN}OK!${NC}"
+  fi
+}
+
+# Moves all the created playlists directories
+function move_playlists_dirs {
+  cd $PWD_DIR
+  echo -n "Moving the created files inside playlists..."
+  local ARTIST_COUNT=$TEST_SIZE
+  local HAS_ERROR=0
+
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    cd $PWD_DIR
+    if [ -d "$DST_DIR/playlists/NewList$ARTIST_COUNT" ]; then
+      mv "$DST_DIR/playlists/NewList$ARTIST_COUNT" "$DST_DIR/playlists/SomeList$ARTIST_COUNT" &> /dev/null
+      if [ $? -ne 0 ] ; then
+        if [ $HAS_ERROR -eq 0 ] ; then
+          echo "${RED}ERROR${NC}"
+        fi
+        HAS_ERROR=1
+        echo "ERROR: Cannot move to ${DST_DIR}/playlists/SomeList${ARTIST_COUNT}"
+      fi
+    else
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "${RED}ERROR${NC}"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: Directory ${DST_DIR}/NewList${ARTIST_COUNT} not exists"
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "${GREEN}OK!${NC}"
+  fi
+}
+
+# Moves all the created files inside playlists directory 
+function move_playlists_files {
+  cd $PWD_DIR
+  echo -n "Moving the files inside playlists..."
+  local ARTIST_COUNT=$TEST_SIZE
+  local HAS_ERROR=0
+
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    cd $PWD_DIR
+    if [ -d "$DST_DIR/playlists/SomeList$ARTIST_COUNT" ]; then
+      mkdir "$DST_DIR/playlists/OtherList$ARTIST_COUNT"  
+      if [ $? -ne 0 ] ; then
+        if [ $HAS_ERROR -eq 0 ] ; then
+          echo "${RED}ERROR${NC}"
+        fi
+        HAS_ERROR=1
+        echo "ERROR: Cannot create ${DST_DIR}/playlists/OtherList${ARTIST_COUNT}"
+      else
+        mv "$DST_DIR/playlists/SomeList$ARTIST_COUNT/*" "$DST_DIR/playlists/OtherList$ARTIST_COUNT"
+        if [ $? -ne 0 ] ; then
+          if [ $HAS_ERROR -eq 0 ] ; then
+            echo "${RED}ERROR${NC}"
+          fi
+          HAS_ERROR=1
+          echo "ERROR: Cannot move files to ${DST_DIR}/playlists/OtherList${ARTIST_COUNT}"
+        fi
+      fi
+    else
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "${RED}ERROR${NC}"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: Directory ${DST_DIR}/playlists/SomeList${ARTIST_COUNT} not exists"
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "${GREEN}OK!${NC}"
+  fi
+}
+
+# Check that all the moved playlist dirs inside playlists directory 
+# are in the right place.
+function check_moved_playlists_files {
+  cd $PWD_DIR
+  echo -n "Checking the moved files inside playlists..."
+
+  # Test the playlist files.
+  local ARTIST_COUNT=$TEST_SIZE
+  local HAS_ERROR=0
+
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    cd $PWD_DIR
+    echo "#EXTM3U" > ${SRC_DIR}/OtherList${ARTIST_COUNT}
+    cd $SRC_DIR
+    local BASE_DIR=$(pwd)
+    cd $PWD_DIR
+    ALBUM_COUNT=1
+    while [ $ALBUM_COUNT -le $TEST_SIZE ]; do
+      SONG_COUNT=1
+      while [ $SONG_COUNT -le $TEST_SIZE ]; do
+        echo "#MULI ListArtist${ARTIST_COUNT} - ListAlbum${ALBUM_COUNT} - NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" >> ${SRC_DIR}/OtherList${ARTIST_COUNT}
+        echo "${BASE_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT}/NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" >> ${SRC_DIR}/OtherList${ARTIST_COUNT}
+        echo >> ${SRC_DIR}/OtherList${ARTIST_COUNT}
+        let SONG_COUNT=SONG_COUNT+1
+      done
+      let ALBUM_COUNT=ALBUM_COUNT+1
+    done
+    cmp --silent ${SRC_DIR}/OtherList${ARTIST_COUNT} ${SRC_DIR}/playlists/OtherList${ARTIST_COUNT}.m3u 
+    if [ ! $? -eq 0 ] ; then
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "${RED}ERROR${NC}"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: The playlist ${SRC_DIR}/playlists/OtherList${ARTIST_COUNT}.m3u has errors."
+    fi
+    let ARTIST_COUNT=ARTIST_COUNT-1
+  done
+
+  if [ $HAS_ERROR -eq 0 ] ; then
+    echo "${GREEN}OK!${NC}"
+  fi
+}
+
+# Check that all the moved playlist dirs inside playlists directory 
+# are in the right place.
+function check_moved_playlists_dirs {
+  cd $PWD_DIR
+  echo -n "Checking the created files inside playlists..."
+
+  # Test the playlist files.
+  local ARTIST_COUNT=$TEST_SIZE
+  local HAS_ERROR=0
+
+  while [ $ARTIST_COUNT -gt 0 ]; do
+    cd $PWD_DIR
+    echo "#EXTM3U" > ${SRC_DIR}/SomeList${ARTIST_COUNT}
+    cd $SRC_DIR
+    local BASE_DIR=$(pwd)
+    cd $PWD_DIR
+    ALBUM_COUNT=1
+    while [ $ALBUM_COUNT -le $TEST_SIZE ]; do
+      SONG_COUNT=1
+      while [ $SONG_COUNT -le $TEST_SIZE ]; do
+        echo "#MULI ListArtist${ARTIST_COUNT} - ListAlbum${ALBUM_COUNT} - NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" >> ${SRC_DIR}/SomeList${ARTIST_COUNT}
+        echo "${BASE_DIR}/ListArtist${ARTIST_COUNT}/ListAlbum${ALBUM_COUNT}/NewSongA${ARTIST_COUNT}A${ALBUM_COUNT}S${SONG_COUNT}.mp3" >> ${SRC_DIR}/SomeList${ARTIST_COUNT}
+        echo >> ${SRC_DIR}/SomeList${ARTIST_COUNT}
+        let SONG_COUNT=SONG_COUNT+1
+      done
+      let ALBUM_COUNT=ALBUM_COUNT+1
+    done
+    cmp --silent ${SRC_DIR}/SomeList${ARTIST_COUNT} ${SRC_DIR}/playlists/SomeList${ARTIST_COUNT}.m3u 
+    if [ ! $? -eq 0 ] ; then
+      if [ $HAS_ERROR -eq 0 ] ; then
+        echo "${RED}ERROR${NC}"
+      fi
+      HAS_ERROR=1
+      echo "ERROR: The playlist ${SRC_DIR}/playlists/SomeList${ARTIST_COUNT}.m3u has errors."
     fi
     let ARTIST_COUNT=ARTIST_COUNT-1
   done
@@ -1357,38 +1517,44 @@ create_fake
 create_empty
 create_special
 mount_muli
-check_fake
-check_empty
-check_special
-copy_artists
-check_copied_artists
-sleep 3
-copy_albums
-sleep 3
-check_copied_albums
-copy_songs
-sleep 3
-check_copied_songs
-delete_songs
-delete_albums
-delete_artists
-move_artists
-sleep 3
-check_moved_artists
-move_albums
-sleep 3
-check_moved_albums
-move_songs
-sleep 3
-check_moved_songs
-mkdirs
-check_mkdirs
-drop_files
-check_fake
+#check_fake
+#check_empty
+#check_special
+#copy_artists
+#check_copied_artists
+#sleep 3
+#copy_albums
+#sleep 3
+#check_copied_albums
+#copy_songs
+#sleep 3
+#check_copied_songs
+#delete_songs
+#delete_albums
+#delete_artists
+#move_artists
+#sleep 3
+#check_moved_artists
+#move_albums
+#sleep 3
+#check_moved_albums
+#move_songs
+#sleep 3
+#check_moved_songs
+#mkdirs
+#check_mkdirs
+#drop_files
+#check_fake
 playlist_mkdirs
-sleep 10
+sleep 5
 check_playlists_mkdirs
-umount_muli
-clean_up
+move_playlists_dirs
+sleep 3
+check_moved_playlists_dirs
+#move_playlists_files
+#sleep 3
+#check_moved_playlists_files
+#umount_muli
+#clean_up
 
 
