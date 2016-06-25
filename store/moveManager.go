@@ -36,22 +36,23 @@ import (
 // and updates the tags to match the new location.
 // It also moves the actual file into the new
 // location.
-func MoveSongs(oldArtist, oldAlbum, oldName, newArtist, newAlbum, newName, path, mPoint string) error {
+func MoveSongs(oldArtist, oldAlbum, oldName, newArtist, newAlbum, newName, path, mPoint string) (string, error) {
 	glog.Infof("Moving song from Artist: %s, Album: %s, name: %s and path: %s to Artist: %s, Album: %s, name: %s\n", oldArtist, oldAlbum, oldName, path, newArtist, newAlbum, newName)
 
 	// Check file extension.
 	extension := filepath.Ext(path)
 	if extension != ".mp3" {
 		glog.Info("Wrong file format.")
-		return errors.New("Wrong file format.")
+		return "", errors.New("Wrong file format.")
 	}
 	rootPoint := mPoint
 	if rootPoint[len(rootPoint)-1] != '/' {
 		rootPoint = rootPoint + "/"
 	}
 
+	newFileName := GetCompatibleString(newName[:len(newName)-len(extension)]) + extension
 	newPath := rootPoint + newArtist + "/" + newAlbum + "/"
-	newFullPath := newPath + GetCompatibleString(newName[:len(newName)-len(extension)]) + extension
+	newFullPath := newPath + newFileName
 
 	// Get all the Playlists form the file.
 	songStore, err := GetSong(oldArtist, oldAlbum, oldName)
@@ -68,14 +69,14 @@ func MoveSongs(oldArtist, oldAlbum, oldName, newArtist, newAlbum, newName, path,
 	err = os.Rename(path, newFullPath)
 	if err != nil {
 		glog.Infof("Cannot rename the file: %s\n", err)
-		return err
+		return "", err
 	}
 
 	// Delete the song from the database
 	err = DeleteSong(oldArtist, oldAlbum, oldName, mPoint)
 	if err != nil {
 		glog.Infof("Cannot delete song: %s\n", err)
-		return err
+		return "", err
 	}
 
 	// Change the tags in the file.
@@ -83,7 +84,8 @@ func MoveSongs(oldArtist, oldAlbum, oldName, newArtist, newAlbum, newName, path,
 	// Add the song again to the database.
 	_, err = CreateSong(newArtist, newAlbum, newName, newPath)
 	if err != nil {
-		glog.Infof("Cannot create son in the db: %s\n", err)
+		glog.Infof("Cannot create song in the db: %s\n", err)
+		return "", err
 	}
 
 	// Add the song to all the playlists.
@@ -99,7 +101,7 @@ func MoveSongs(oldArtist, oldAlbum, oldName, newArtist, newAlbum, newName, path,
 		RegeneratePlaylistFile(pl, mPoint)
 	}
 
-	return nil
+	return newFileName, nil
 }
 
 // processNewArtist returns all the albums inside an Artist and

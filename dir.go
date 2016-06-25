@@ -542,10 +542,6 @@ func (d *Dir) Rename(ctx context.Context, r *fuse.RenameRequest, newDir fs.Node)
 	}
 	path := d.mPoint + d.artist + "/" + d.album + "/" + r.OldName
 
-	//if newDir != d {
-	//	return fuse.Errno(syscall.EXDEV)
-	//}
-
 	if r.OldName == ".description" || r.NewName == ".description" {
 		return fuse.EPERM
 	}
@@ -575,14 +571,28 @@ func (d *Dir) Rename(ctx context.Context, r *fuse.RenameRequest, newDir fs.Node)
 		var err error
 		if len(d.album) < 1 {
 			glog.Info("Rename playlist name.")
-			err = store.RenamePlaylist(r.OldName, r.NewName, d.mPoint)
+			var newName string
+			if len(newD.album) < 1 {
+				newName, err = store.RenamePlaylist(r.OldName, r.NewName, d.mPoint)
+			} else {
+				newName, err = store.RenamePlaylist(r.OldName, newD.album, d.mPoint)
+			}
+			if err != nil {
+				return fuse.EIO
+			}
+			err = store.RegeneratePlaylistFile(newName, d.mPoint)
 			if err != nil {
 				return fuse.EIO
 			}
 			return nil
 		}
 
-		err = store.RenamePlaylistSong(d.album, r.OldName, r.NewName, d.mPoint)
+		_, err = store.RenamePlaylistSong(d.album, r.OldName, r.NewName, d.mPoint)
+		if err != nil {
+			return fuse.EIO
+		}
+
+		err = store.RegeneratePlaylistFile(d.album, d.mPoint)
 		if err != nil {
 			return fuse.EIO
 		}
@@ -600,7 +610,7 @@ func (d *Dir) Rename(ctx context.Context, r *fuse.RenameRequest, newDir fs.Node)
 		return err
 	}
 
-	err := store.MoveSongs(d.artist, d.album, r.OldName, newD.artist, newD.album, r.NewName, path, d.mPoint)
+	_, err := store.MoveSongs(d.artist, d.album, r.OldName, newD.artist, newD.album, r.NewName, path, d.mPoint)
 	if err != nil {
 		return fuse.EIO
 	}

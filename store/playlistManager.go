@@ -584,10 +584,12 @@ func getPlaylistFile(playlist, song string) (playlistmgr.PlaylistFile, error) {
 
 // RenamePlaylist moves the entire Playlist and changes all
 // the links to the songs in every MuLi song.
-func RenamePlaylist(oldName, newName, mPoint string) error {
+func RenamePlaylist(oldName, newName, mPoint string) (string, error) {
+	glog.Infof("Renaming %s playlist to %s.\n", oldName, newName)
+	newName = GetCompatibleString(newName)
 	db, err := bolt.Open(config.DbPath, 0600, nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer db.Close()
 
@@ -682,27 +684,27 @@ func RenamePlaylist(oldName, newName, mPoint string) error {
 			}
 		}
 
+		playlistmgr.DeletePlaylist(oldName, mPoint)
 		return root.DeleteBucket([]byte(oldName))
 	})
 
 	if err != nil {
-		return err
-
+		return "", err
 	}
-	err = RegeneratePlaylistFile(newName, mPoint)
-	return err
+
+	return newName, nil
 }
 
 // RenamePlaylistSong changes the name on a specific song,
 // it also updates the song in the original place and
 // checks that every playlist containing the song is updated.
-func RenamePlaylistSong(playlist, oldName, newName, mPoint string) error {
+func RenamePlaylistSong(playlist, oldName, newName, mPoint string) (string, error) {
 	file, err := getPlaylistFile(playlist, oldName)
 	if err != nil {
 		glog.Infof("Cannot open playlist file: %s\n", err)
-		return err
+		return "", err
 	}
 
-	err = MoveSongs(file.Artist, file.Album, file.Title, file.Artist, file.Album, newName, file.Path, mPoint)
-	return err
+	newName, err = MoveSongs(file.Artist, file.Album, file.Title, file.Artist, file.Album, newName, file.Path, mPoint)
+	return newName, err
 }
