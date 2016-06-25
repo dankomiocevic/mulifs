@@ -236,12 +236,16 @@ mulifs [global_options] MUSIC_SOURCE MOUNTPOINT
 * MOUNTPOINT: The path where MuLi should be mounted.
 
 ### Global Options ###
+* allow_other: Allow other users to access the filesystem.
+* allow_root: Allow root to access the filesystem.
 * alsologtostderr: log to standard error as well as files
 * db_path string: Database path. (default "muli.db")
+* gid: An unsigned integer representing the Group that will own the files.
 * log_backtrace_at value: when logging hits line file:N, emit a stack trace (default :0)
 * log_dir string: If non-empty, write log files in this directory
 * logtostderr: log to standard error instead of files
 * stderrthreshold value: logs at or above this threshold go to stderr
+* uid: An unsigned integer representing the User that will own the files.
 * v value: log level for V logs
 * vmodule value: comma-separated list of pattern=N settings for file-filtered logging
 
