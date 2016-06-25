@@ -29,6 +29,14 @@ import (
 	"bazil.org/fuse/fs"
 )
 
+type fs_config struct {
+	uid         uint
+	gid         uint
+	allow_users bool
+	allow_root  bool
+}
+
+var config_params fs_config
 var progName = filepath.Base(os.Args[0])
 
 const progVer = "0.1"
@@ -60,7 +68,16 @@ func main() {
 	flag.Usage = usage
 	var db_path string
 	flag.StringVar(&db_path, "db_path", "muli.db", "Database path.")
+	uid_conf := flag.Uint("uid", 0, "User owner of the files.")
+	gid_conf := flag.Uint("gid", 0, "Group owner of the files.")
+	allow_other := flag.Bool("allow_other", false, "Allow other users to access the filesystem.")
+	allow_root := flag.Bool("allow_root", false, "Allow root to access the filesystem.")
+
 	flag.Parse()
+
+	config_params = fs_config{
+		uid: *uid_conf, gid: *gid_conf, allow_users: *allow_other, allow_root: *allow_root,
+	}
 
 	if flag.NArg() < 2 {
 		usage()
@@ -117,14 +134,24 @@ func main() {
 // the details of the mounted filesystem.
 func mount(path, mountpoint string) error {
 	// TODO: Check that there is no folder named
-	// playlist or drop in the path.
-	c, err := fuse.Mount(
-		mountpoint,
+
+	mountOptions := []fuse.MountOption{
 		fuse.FSName("MuLi"),
 		fuse.Subtype("MuLiFS"),
 		fuse.LocalVolume(),
 		fuse.VolumeName("Music Library"),
-	)
+	}
+
+	if config_params.allow_users {
+		mountOptions = append(mountOptions, fuse.AllowOther())
+	} else {
+		if config_params.allow_root {
+			mountOptions = append(mountOptions, fuse.AllowRoot())
+		}
+	}
+	// playlist or drop in the path.
+	c, err := fuse.Mount(
+		mountpoint, mountOptions...)
 
 	if err != nil {
 		return err

@@ -65,6 +65,12 @@ func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
 
 			a.Size = uint64(len(descriptionJson))
 			a.Mode = 0444
+			if config_params.uid != 0 {
+				a.Uid = config_params.uid
+			}
+			if config_params.gid != 0 {
+				a.Gid = config_params.uid
+			}
 		} else {
 			return fuse.EPERM
 		}
@@ -101,6 +107,12 @@ func (f *File) Attr(ctx context.Context, a *fuse.Attr) error {
 
 		a.Size = uint64(fi.Size())
 		a.Mode = 0777
+		if config_params.uid != 0 {
+			a.Uid = config_params.uid
+		}
+		if config_params.gid != 0 {
+			a.Gid = config_params.uid
+		}
 	}
 	return nil
 }
