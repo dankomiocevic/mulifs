@@ -57,7 +57,7 @@ func (f *FS) Statfs(ctx context.Context, req *fuse.StatfsRequest, resp *fuse.Sta
 		resp.Blocks = stat.Blocks
 		resp.Bfree = stat.Bfree
 		resp.Bavail = stat.Bavail
-		resp.Bsize = stat.Bsize
+		resp.Bsize = uint32(stat.Bsize)
 	}
 	return nil
 }
