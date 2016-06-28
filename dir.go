@@ -46,11 +46,12 @@ func (d *Dir) Attr(ctx context.Context, a *fuse.Attr) error {
 	glog.Infof("Entered Attr dir: Artist: %s, Album: %s\n", d.artist, d.album)
 	a.Mode = os.ModeDir | 0777
 	if config_params.uid != 0 {
-		a.Uid = config_params.uid
+		a.Uid = uint32(config_params.uid)
 	}
 	if config_params.gid != 0 {
-		a.Gid = config_params.uid
+		a.Gid = uint32(config_params.gid)
 	}
+	a.Size = 4096
 	return nil
 }
 
