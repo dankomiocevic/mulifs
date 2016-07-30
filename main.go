@@ -75,6 +75,9 @@ func main() {
 
 	flag.Parse()
 
+	if len(os.Getenv("PATH")) < 1 {
+		os.Setenv("PATH", "/bin:/sbin")
+	}
 	config_params = fs_config{
 		uid: *uid_conf, gid: *gid_conf, allow_users: *allow_other, allow_root: *allow_root,
 	}
