@@ -24,6 +24,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"bazil.org/fuse"
 	"bazil.org/fuse/fs"
@@ -61,13 +63,21 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "\n")
 }
 
+func newTrue() *bool {
+	b := true
+	return &b
+}
+
 func main() {
 	log.SetFlags(0)
 	log.SetPrefix(progName + ": ")
 
 	flag.Usage = usage
+	var err error
 	var db_path string
+	var mount_ops string
 	flag.StringVar(&db_path, "db_path", "muli.db", "Database path.")
+	flag.StringVar(&mount_ops, "o", "", "Default mount options.")
 	uid_conf := flag.Uint("uid", 0, "User owner of the files.")
 	gid_conf := flag.Uint("gid", 0, "Group owner of the files.")
 	allow_other := flag.Bool("allow_other", false, "Allow other users to access the filesystem.")
@@ -78,6 +88,42 @@ func main() {
 	if len(os.Getenv("PATH")) < 1 {
 		os.Setenv("PATH", "/bin:/sbin")
 	}
+
+	if len(mount_ops) > 0 {
+		opts_tokens := strings.Split(mount_ops, ",")
+		for _, token := range opts_tokens {
+			if strings.Compare(token, "allow_root") == 0 {
+				allow_root = newTrue()
+			} else if strings.Compare(token, "allow_other") == 0 {
+				allow_other = newTrue()
+			} else if strings.HasPrefix(token, "uid=") {
+				parsed_uid, err := strconv.ParseUint(token[len("uid="):], 10, 32)
+				if err != nil {
+					log.Fatal(err)
+					os.Exit(1)
+				} else {
+					uint_uid := uint(parsed_uid)
+					uid_conf = &uint_uid
+				}
+			} else if strings.HasPrefix(token, "gid=") {
+				parsed_gid, err := strconv.ParseUint(token[len("gid="):], 10, 32)
+				if err != nil {
+					log.Fatal(err)
+					os.Exit(1)
+				} else {
+					uint_gid := uint(parsed_gid)
+					gid_conf = &uint_gid
+				}
+			} else if strings.HasPrefix(token, "db_path=") {
+				db_path = token[len("db_path="):]
+				if len(db_path) < 3 {
+					log.Fatal("Error in db_path")
+					os.Exit(1)
+				}
+			}
+		}
+	}
+
 	config_params = fs_config{
 		uid: *uid_conf, gid: *gid_conf, allow_users: *allow_other, allow_root: *allow_root,
 	}
@@ -99,7 +145,7 @@ func main() {
 		os.Exit(4)
 	}
 
-	err := store.InitDB(db_path)
+	err = store.InitDB(db_path)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(5)

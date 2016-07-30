@@ -183,8 +183,6 @@ func ListPlaylistSongs(playlist, mPoint string) ([]fuse.Dirent, error) {
 		}
 	}
 	return a, nil
-
-	return nil, nil
 }
 
 // CreatePlaylist function creates a playlist item in the database and

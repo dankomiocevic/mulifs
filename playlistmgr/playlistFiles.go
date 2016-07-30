@@ -148,7 +148,7 @@ func RegeneratePlaylistFile(songs []PlaylistFile, playlist, mPoint string) error
 	if err != nil {
 		glog.Infof("Cannot write on file.")
 	}
-	fmt.Printf("Total songs: %d\n", len(songs))
+	glog.Infof("Total songs: %d\n", len(songs))
 	for _, s := range songs {
 		fmt.Printf("Adding song: %s\n", s.Title)
 		_, err = f.WriteString("#MULI ")
