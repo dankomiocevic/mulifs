@@ -84,7 +84,12 @@ func main() {
 	allow_root := flag.Bool("allow_root", false, "Allow root to access the filesystem.")
 
 	flag.Parse()
-
+	
+	if len(mount_ops) < 1 && flag.NArg() > 3 && strings.Compare(flag.Arg(2), "-o") == 0 {
+		mount_ops = flag.Arg(3)
+	}
+	
+	
 	if len(os.Getenv("PATH")) < 1 {
 		os.Setenv("PATH", "/bin:/sbin")
 	}
