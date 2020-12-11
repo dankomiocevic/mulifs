@@ -35,7 +35,6 @@ type fs_config struct {
 	uid         uint
 	gid         uint
 	allow_users bool
-	allow_root  bool
 }
 
 var config_params fs_config
@@ -81,7 +80,6 @@ func main() {
 	uid_conf := flag.Uint("uid", 0, "User owner of the files.")
 	gid_conf := flag.Uint("gid", 0, "Group owner of the files.")
 	allow_other := flag.Bool("allow_other", false, "Allow other users to access the filesystem.")
-	allow_root := flag.Bool("allow_root", false, "Allow root to access the filesystem.")
 
 	flag.Parse()
 		
@@ -102,9 +100,7 @@ func main() {
 	if len(mount_ops) > 0 {
 		opts_tokens := strings.Split(mount_ops, ",")
 		for _, token := range opts_tokens {
-			if strings.Compare(token, "allow_root") == 0 {
-				allow_root = newTrue()
-			} else if strings.Compare(token, "allow_other") == 0 {
+			if strings.Compare(token, "allow_other") == 0 {
 				allow_other = newTrue()
 			} else if strings.HasPrefix(token, "uid=") {
 				parsed_uid, err := strconv.ParseUint(token[len("uid="):], 10, 32)
@@ -135,7 +131,7 @@ func main() {
 	}
 
 	config_params = fs_config{
-		uid: *uid_conf, gid: *gid_conf, allow_users: *allow_other, allow_root: *allow_root,
+		uid: *uid_conf, gid: *gid_conf, allow_users: *allow_other,
 	}
 
 	if flag.NArg() < 2 {
@@ -203,10 +199,6 @@ func mount(path, mountpoint string) error {
 
 	if config_params.allow_users {
 		mountOptions = append(mountOptions, fuse.AllowOther())
-	} else {
-		if config_params.allow_root {
-			mountOptions = append(mountOptions, fuse.AllowRoot())
-		}
 	}
 	// playlist or drop in the path.
 	c, err := fuse.Mount(
