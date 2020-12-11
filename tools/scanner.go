@@ -37,13 +37,13 @@ func visit(path string, f os.FileInfo, err error) error {
 		glog.Infof("Reading %s\n", path)
 		err, f := musicmgr.GetMp3Tags(path)
 		if err != nil {
-			glog.Errorf("Error in %s\n", path)
+			glog.Errorf("Error in %s: %v\n", path, err)
 		}
 		if f.Artist == "drop" {
-			glog.Errorf("Error in %s\n", path)
+			glog.Errorf("Error in %s: Invalid artist name.\n", path)
 		}
 		if f.Artist == "playlists" {
-			glog.Errorf("Error in %s\n", path)
+			glog.Errorf("Error in %s: Invalid artist name.\n", path)
 		}
 		store.StoreNewSong(&f, path)
 	}
