@@ -114,6 +114,9 @@ func GetCompatibleString(name string) string {
 	// Remove all the non alphanumeric characters
 	r, _ := regexp.Compile(`\W`)
 	result = r.ReplaceAllString(result, "")
+	if result == "" {
+		result = "unknown"
+	}
 	return result
 }
 

@@ -237,7 +237,6 @@ mulifs [global_options] MUSIC_SOURCE MOUNTPOINT
 
 ### Global Options ###
 * allow_other: Allow other users to access the filesystem.
-* allow_root: Allow root to access the filesystem.
 * alsologtostderr: log to standard error as well as files
 * db_path string: Database path. (default "muli.db")
 * gid: An unsigned integer representing the Group that will own the files.
